@@ -26,28 +26,27 @@ COMPTES = {
     "secretaire": {"nom": "Secrétaire", "mp": "sec2026", "role": "SECRETAIRE"},
     "chauffeur": {"nom": "Chauffeur", "mp": "ch2026", "role": "CHAUFFEUR"}
 }
-# 1. BLOC COMPLET D'AUTHENTIFICATION SECURISEE
-# ==============================================================================
+# # 1. BLOC COMPLET D'AUTHENTIFICATION SECURISEE
+# =========================================================
 if not st.session_state["authenticated"]:
-    # Le titre de connexion est UNIQUEMENT visible ici
     st.title("🔒 Accès Sécurisé")
-    user_input = st.text_input("Veuillez entrer le mot de passe", type="password")
-
-    if st.button("Se connecter"):
-        # Vérification avec vos secrets Streamlit
-        if user_input == st.secrets["password"]:
+    st.subheader("Veuillez entrer vos identifiants pour accéder à vos compartiments")
+    
+    with st.form(key="login_form"):
+        username = st.text_input("Nom d'utilisateur").strip().lower()
+        password = st.text_input("Mot de passe", type="password")
+        submit_login = st.form_submit_button("Se connecter")
+        
+    if submit_login:
+        if username in COMPTES and COMPTES[username]["mp"] == password:
             st.session_state["authenticated"] = True
+            st.session_state["user_role"] = COMPTES[username]["role"]
+            st.session_state["user_name"] = COMPTES[username]["nom"]
+            st.success(f"✅ Bienvenue {st.session_state['user_name']} !")
             st.rerun()
         else:
-            st.error("Mot de passe incorrect.")
-            
-    # TOUT CE QUI EST EN DESSOUS DOIT ÊTRE ALIGNÉ AVEC LE "IF NOT" INITIAL (4 ESPACES)
-    st.stop()  # Bloque impérativement l'affichage global si non connecté
-
-
-# ==============================================================================
-# TOUT CE QUI EST EN DESSOUS NE S'AFFICHE QUE SI L'UTILISATEUR EST CONNECTÉ
-# ==============================================================================
+            st.error("❌ Identifiant ou mot de passe incorrect.")
+    st.stop()
 
 # --- Base de données Excel centrale ---
 EXCEL_PARC = "gestion_parc_automobile.xlsx"
