@@ -743,6 +743,8 @@ elif "Flotte globale" in menu:
                 
                 df_flotte = pd.concat([df_flotte, pd.DataFrame([nouveau_vehicule])], ignore_index=True)
                 df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
+
+                st.session_state['df_flotte'] = df_flotte
                 
                 st.success(f"✅ Le véhicule **{immatriculation}** ({marque_modele}) a été enregistré avec succès dans la flotte !")
                 st.rerun()
