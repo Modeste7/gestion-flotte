@@ -756,8 +756,7 @@ elif "Flotte globale" in menu:
                 
                 # 1. Mise à jour de la mémoire locale de Streamlit
         # 1. Mise à jour de la mémoire locale de Streamlit
-        df_flotte = pd.concat([df_flotte, pd.DataFrame([nouveau_vehicule])], ignore_index=True)
-        st.session_state['df_flotte'] = df_flotte
+        st.session_state['df_flotte'] = pd.concat([st.session_state['df_flotte'], pd.DataFrame([nouveau_vehicule])], ignore_index=True)
 
         # 2. Envoi direct et sécurisé dans Google Sheets
         try:
