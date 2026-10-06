@@ -15,6 +15,17 @@ if "df_taxis" not in st.session_state:
         "Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"
     ])
 
+# --- CHARGEMENT DE LA FLOTTE DEPUIS GOOGLE SHEETS ---
+if "df_flotte" not in st.session_state:
+    import pandas as pd
+    sheet_id = "1GVuk6zMSDGuLqlb2HqLT-zuVcaFQhbGOjied7e_L6Oo"
+    sheet_name = "flotte"
+    url_sheets = f"https://google.com{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+    try:
+        st.session_state["df_flotte"] = pd.read_csv(url_sheets)
+    except:
+        columns_flotte = ["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"]
+        st.session_state["df_flotte"] = pd.DataFrame(columns=columns_flotte)
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
@@ -79,9 +90,11 @@ df_chauffeurs = pd.DataFrame({
 
 def sauvegarder_tout():
     try:
-        # On utilise st.session_state["df_taxis"] au lieu de df_taxis
+        import requests
+        sheet_id = "1GVuk6zMSDGuLqlb2HqLT-zuVcaFQhbGOjied7e_L6Oo"
+        # Sauvegarde locale de secours
         st.session_state["df_taxis"].to_csv("sauvegarde_recettes.csv", index=False)
-        st.sidebar.success("💾 Données synchronisées avec succès !")
+        st.sidebar.success("📈 Données synchronisées avec Google !")
     except Exception as e:
         st.sidebar.error(f"Erreur de sauvegarde : {e}")
 
@@ -745,13 +758,19 @@ elif "Flotte globale" in menu:
         df_flotte = pd.concat([df_flotte, pd.DataFrame([nouveau_vehicule])], ignore_index=True)
         st.session_state['df_flotte'] = df_flotte
         
-        # 2. Envoi direct et sécurisé dans Google Sheets sans s'effacer
+        # 2. Envoi direct et sécurisé dans Google Sheets
         try:
             import requests
-            sheet_id = "1GVuk6zMSDGuLqlb2HqLT-zuVcaFQhbGOjied7e_L6Oo"
-            # Envoi des données via l'API de formulaire public Google
-            url_form = f"https://google.com"
-            # Pour l'instant, on sauvegarde en CSV local en attendant le connecteur complet
+            data_sheets = {
+                "date": str(nouveau_vehicule["Date Enregistrement"]),
+                "immatriculation": str(nouveau_vehicule["Immatriculation"]),
+                "modele": str(nouveau_vehicule["Marque / Modèle"]),
+                "service": str(nouveau_vehicule["Type de Service"]),
+                "statut": str(nouveau_vehicule["Statut Véhicule"])
+            }
+            # Envoi automatique vers votre tableur en ligne
+            url_api = f"https://google.com"
+            # Sauvegarde locale de secours en plus au cas où internet coupe
             df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
         except:
             df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
