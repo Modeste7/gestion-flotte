@@ -755,28 +755,24 @@ elif "Flotte globale" in menu:
                 }
                 
                 # 1. Mise à jour de la mémoire locale de Streamlit
+        # 1. Mise à jour de la mémoire locale de Streamlit
         df_flotte = pd.concat([df_flotte, pd.DataFrame([nouveau_vehicule])], ignore_index=True)
         st.session_state['df_flotte'] = df_flotte
-        
+
         # 2. Envoi direct et sécurisé dans Google Sheets
         try:
             import requests
             data_sheets = {
-                "date": str(nouveau_vehicule["Date Enregistrement"]),
-                "immatriculation": str(nouveau_vehicule["Immatriculation"]),
-                "modele": str(nouveau_vehicule["Marque / Modèle"]),
-                "service": str(nouveau_vehicule["Type de Service"]),
-                "statut": str(nouveau_vehicule["Statut Véhicule"])
+                "date": str(date_actuelle),
+                "immatriculation": str(immatriculation.strip()),
+                "modele": str(marque_modele.strip()),
+                "service": str(type_service),
+                "statut": str(statut_vehicule)
             }
-            # Envoi automatique vers votre tableur en ligne
             url_api = f"https://google.com"
-            # Sauvegarde locale de secours en plus au cas où internet coupe
             df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
         except:
             df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
-                
-            st.success(f"✅ Le véhicule **{immatriculation}** ({marque_modele}) a été enregistré avec succès dans la flotte !")
-            st.rerun()
 
     # --- ONGLET 2 : RÉPERTOIRE DE LA FLOTTE ---
     with tab2:
