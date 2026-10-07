@@ -704,7 +704,7 @@ elif "Flotte globale" in menu:
     st.subheader("📋 Répertoire et Enregistrement des Véhicules")
     
     # --- CONFIGURATION DU FICHIER DE SAUVEGARDE ---
-    CSV_FILE_FLOTTE = "sauvegarde_flotte.csv"
+    CSV_FILE_FLOTTE = "flotte_officiel.csv"
 
     # Chargement initial unifié dans la mémoire globale
     if not os.path.exists(CSV_FILE_FLOTTE):
