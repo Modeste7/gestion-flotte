@@ -759,15 +759,18 @@ elif "Flotte globale" in menu:
         df_flotte = pd.concat([st.session_state['df_flotte'], pd.DataFrame([nouveau_vehicule])], ignore_index=True)
         df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
         st.session_state['df_flotte'] = df_flotte
+        with tab2:
+            st.write("### 📊 Liste des Véhicules Enregistrés")
         
-        if not df_flotte.empty:
-            # Filtre de recherche par immatriculation
-            recherche_v = st.text_input("🔍 Filtrer par numéro d'immatriculation :")
-            
-            # Affichage direct et ultra-sécurisé du tableau
-        st.write("### Liste des Véhicules Enregistrés")
-        if not st.session_state["df_flotte"].empty:
-            st.dataframe(st.session_state["df_flotte"])
+        # Filtre de recherche par immatriculation
+        recherche_v = st.text_input("🔍 Filtrer par numéro d'immatriculation :", key="recherche_flotte_ong2")
+        
+        # Filtrage et affichage sécurisé
+        df_affichage = st.session_state["df_flotte"]
+        if not df_affichage.empty:
+            if recherche_v:
+                df_affichage = df_affichage[df_affichage["Immatriculation"].str.contains(recherche_v, case=False, na=False)]
+            st.dataframe(df_affichage, use_container_width=True)
         else:
             st.info("Aucun véhicule dans la flotte pour le moment.")
 elif "Gestion des Accès" in menu:
