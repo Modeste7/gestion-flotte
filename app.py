@@ -721,63 +721,61 @@ elif "Flotte globale" in menu:
                 st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
     # Définition des deux onglets
-    tab1, tab2 = st.tabs(["📝 Ajouter un Véhicule", "📋 Liste du Parc Automobile"])
+    tab1, tab2 = st.tabs(["📝 Ajouter un Véhicule", "📊 Liste du Parc Automobile"])
     
-    # --- ONGLET 1 : FORMULAIRE D'AJOUT ---
     with tab1:
-        st.subheader("✍️ Enregistrer un nouveau véhicule")
+        st.subheader("📝 Enregistrer un nouveau véhicule")
         
         with st.form(key="form_flotte", clear_on_submit=True):
             col1, col2 = st.columns(2)
-            
             with col1:
-                immatriculation = st.text_input("Numéro d'immatriculation *").upper()
-                marque_modele = st.text_input("Marque et Modèle (ex: Toyota Corolla, Hyundai...) *")
-                
+                immatriculation = st.text_input("Numéro d'immatriculation *")
+                marque_modele = st.text_input("Marque et Modèle (ex: Toyota Corolla) *")
             with col2:
-                type_service = st.selectbox("Type d'assignation du véhicule", ["🚖 Taxi Communal", "🚗 Véhicule de Location"])
-                statut_vehicule = st.selectbox("Statut initial du véhicule", ["Opérationnel / En Service", "En Maintenance / Garage", "Disponible"])
+                type_service = st.selectbox("Type d'assignation du véhicule *", ["Taxi Communal", "Location", "En Service"])
+                statut_vehicule = st.selectbox("Statut initial du véhicule *", ["Opérationnel", "En Réparation", "Inactif"])
             
-            # Bouton de validation
             submit_vehicule = st.form_submit_button(label="💾 Enregistrer le véhicule")
             
-        if submit_vehicule:
-            if immatriculation.strip() == "" or marque_modele.strip() == "":
-                st.error("Veuillez remplir tous les champs obligatoires (Immatriculation et Marque/Modèle).")
-            else:
-                date_actuelle = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                
-        # Enregistrement direct sécurisé avec génération de date automatique
-        import datetime
-        nouveau_vehicule = {
-            "Immatriculation": immatriculation.strip(),
-            "Usage": type_service,
-            "Marque et Modèle": marque_modele.strip(),
-            "Statut": statut_vehicule,
-            "Date Enregistrement": datetime.datetime.now().strftime("%Y-%m-%d")
-        }
-        df_flotte = pd.concat([st.session_state['df_flotte'], pd.DataFrame([nouveau_vehicule])], ignore_index=True)
-        df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
-        st.session_state['df_flotte'] = df_flotte
-        with tab2:
-            st.write("### 📊 Liste des Véhicules Enregistrés")
+            if submit_vehicule:
+                if immatriculation.strip() == "" or marque_modele.strip() == "":
+                    st.error("⚠️ Veuillez remplir tous les champs obligatoires (Immatriculation et Marque/Modèle).")
+                else:
+                    import datetime
+                    # Le dictionnaire se crée UNIQUEMENT lors du clic sur le bouton
+                    nouveau_vehicule = {
+                        "Date Enregistrement": datetime.datetime.now().strftime("%Y-%m-%d"),
+                        "Immatriculation": immatriculation.strip().upper(),
+                        "Marque / Modèle": marque_modele.strip(),
+                        "Type de Service": type_service,
+                        "Statut Véhicule": statut_vehicule,
+                        "Usage": type_service
+                    }
+                    
+                    # Ajout et sauvegarde stricte dans le fichier permanent
+                    df_flotte = pd.concat([st.session_state['df_flotte'], pd.DataFrame([nouveau_vehicule])], ignore_index=True)
+                    df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
+                    st.session_state['df_flotte'] = df_flotte
+                    st.success(f"🎉 Véhicule {immatriculation.strip().upper()} enregistré avec succès !")
+                    st.rerun()
+
+    with tab2:
+        st.subheader("📊 Liste des Véhicules Enregistrés")
         
         # Filtre de recherche par immatriculation
         recherche_v = st.text_input("🔍 Filtrer par numéro d'immatriculation :", key="recherche_flotte_ong2")
         
-        # Filtrage et affichage sécurisé
         df_affichage = st.session_state["df_flotte"]
         if not df_affichage.empty:
+            # Nettoyage automatique des lignes fantômes vides créées précédemment
+            df_affichage = df_affichage[df_affichage["Immatriculation"].notna() & (df_affichage["Immatriculation"] != "")]
+            
             if recherche_v:
                 df_affichage = df_affichage[df_affichage["Immatriculation"].str.contains(recherche_v, case=False, na=False)]
-            st.dataframe(df_affichage, use_container_width=True)
+            
+            st.dataframe(df_affichage, use_container_width=True, hide_index=True)
         else:
             st.info("Aucun véhicule dans la flotte pour le moment.")
-elif "Gestion des Accès" in menu:
-    st.title("🔑 Espace Donneur d'Accès (Réservé au DG)")
-    st.subheader("📋 Liste des Comptes et Identifiants du Personnel")
-    
-    st.write("En tant que **Directeur Général**, vous êtes le seul à pouvoir consulter la liste des accès actifs de l'entreprise.")
     
     # Configuration de la table des utilisateurs
     # (Ce bloc fait le lien avec votre dictionnaire 'COMPTES' du début)
