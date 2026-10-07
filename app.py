@@ -752,22 +752,8 @@ elif "Flotte globale" in menu:
                 
                 # 1. Mise à jour de la mémoire locale de Streamlit
         import pandas as pd
-        df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
-
-        # 2. Envoi direct et sécurisé dans Google Sheets
-        try:
-            import requests
-            data_sheets = {
-                "date": str(date_actuelle),
-                "immatriculation": str(immatriculation.strip()),
-                "modele": str(marque_modele.strip()),
-                "service": str(type_service),
-                "statut": str(statut_vehicule)
-            }
-            url_api = f"https://google.com"
-            df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
-        except:
-            df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
+        df_flotte.to_csv("sauvegarde_flotte.csv", index=False)
+        st.session_state['df_flotte'] = df_flotte
 
     # --- ONGLET 2 : RÉPERTOIRE DE LA FLOTTE ---
     with tab2:
