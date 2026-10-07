@@ -777,19 +777,20 @@ elif "Flotte globale" in menu:
         else:
             st.info("Aucun véhicule dans la flotte pour le moment.")
     
-    # Configuration de la table des utilisateurs
-    # (Ce bloc fait le lien avec votre dictionnaire 'COMPTES' du début)
-    if 'COMPTES' in globals():
-        donnees_comptes = []
-        for identifiant, infos in COMPTES.items():
-            donnees_comptes.append({
-                "Identifiant de Connexion": identifiant,
-                "Nom Affiché": infos["nom"],
-                "Mot de passe actuel": infos["mp"],
-                "Rôle Système": infos["role"]
-            })
-            
-        df_comptes = pd.DataFrame(donnees_comptes)
-        st.dataframe(df_comptes, use_container_width=True)
-    else:
-        st.info("La liste des comptes d'accès n'est pas encore initialisée en haut du fichier.")
+elif "Gestion des Accès" in menu:
+        st.title("🔑 Gestion des Accès et Mots de Passe")
+        st.subheader("Configuration de la table des utilisateurs")
+        
+        if 'COMPTES' in globals():
+            donnees_comptes = []
+            for identifiant, infos in COMPTES.items():
+                donnees_comptes.append({
+                    "Identifiant de Connexion": identifiant,
+                    "Nom Affiché": infos["nom"],
+                    "Mot de passe actuel": infos["mp"],
+                    "Rôle Système": infos["role"]
+                })
+            df_comptes = pd.DataFrame(donnees_comptes)
+            st.dataframe(df_comptes, use_container_width=True, hide_index=True)
+        else:
+            st.info("La liste des comptes d'accès n'est pas encore initialisée.")
