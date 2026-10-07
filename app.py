@@ -747,14 +747,14 @@ elif "Flotte globale" in menu:
             else:
                 date_actuelle = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 
-                # Enregistrement direct et unifié dans le fichier permanent
-        # Création correcte du dictionnaire avec vos vraies variables
+        # Enregistrement direct sécurisé avec génération de date automatique
+        import datetime
         nouveau_vehicule = {
             "Immatriculation": immatriculation.strip(),
             "Usage": type_service,
             "Marque et Modèle": marque_modele.strip(),
             "Statut": statut_vehicule,
-            "Date Enregistrement": date_actuelle
+            "Date Enregistrement": datetime.datetime.now().strftime("%Y-%m-%d")
         }
         df_flotte = pd.concat([st.session_state['df_flotte'], pd.DataFrame([nouveau_vehicule])], ignore_index=True)
         df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
