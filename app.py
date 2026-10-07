@@ -747,22 +747,18 @@ elif "Flotte globale" in menu:
             else:
                 date_actuelle = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 
-                nouveau_vehicule = {
-                    "Date Enregistrement": date_actuelle,
-                    "Immatriculation": immatriculation.strip(),
-                    "Marque / Modèle": marque_modele.strip(),
-                    "Type de Service": type_service,
-                    "Statut Véhicule": statut_vehicule
-                }
-                
-                # 1. Mise à jour de la mémoire locale de Streamlit
-        import pandas as pd
-        df_flotte.to_csv("sauvegarde_flotte.csv", index=False)
+                # Enregistrement direct et unifié dans le fichier permanent
+        # Création correcte du dictionnaire avec vos vraies variables
+        nouveau_vehicule = {
+            "Immatriculation": immatriculation.strip(),
+            "Usage": type_service,
+            "Marque et Modèle": marque_modele.strip(),
+            "Statut": statut_vehicule,
+            "Date Enregistrement": date_actuelle
+        }
+        df_flotte = pd.concat([st.session_state['df_flotte'], pd.DataFrame([nouveau_vehicule])], ignore_index=True)
+        df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
         st.session_state['df_flotte'] = df_flotte
-
-    # --- ONGLET 2 : RÉPERTOIRE DE LA FLOTTE ---
-    with tab2:
-        st.subheader("🔍 Liste complète de vos véhicules")
         
         if not df_flotte.empty:
             # Filtre de recherche par immatriculation
