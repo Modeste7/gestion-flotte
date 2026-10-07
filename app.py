@@ -706,14 +706,14 @@ elif "Flotte globale" in menu:
     # --- CONFIGURATION DU FICHIER DE SAUVEGARDE ---
     CSV_FILE_FLOTTE = "sauvegarde_flotte.csv"
 
-    # Chargement initial des données ou création d'un DataFrame vierge
-    if os.path.exists(CSV_FILE_FLOTTE):
-        try:
-            df_flotte = pd.read_csv(CSV_FILE_FLOTTE)
-        except Exception:
-            df_flotte = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+    # Chargement initial unifié dans la mémoire globale
+    if not os.path.exists(CSV_FILE_FLOTTE):
+            st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
     else:
-        df_flotte = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+            try:
+                st.session_state["df_flotte"] = pd.read_csv(CSV_FILE_FLOTTE)
+            except Exception:
+                st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
     # Définition des deux onglets
     tab1, tab2 = st.tabs(["📝 Ajouter un Véhicule", "📋 Liste du Parc Automobile"])
