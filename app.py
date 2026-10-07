@@ -15,14 +15,10 @@ if "df_taxis" not in st.session_state:
         "Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"
     ])
 
-# --- CHARGEMENT DE LA FLOTTE DEPUIS GOOGLE SHEETS ---
+# --- CHARGEMENT DE LA FLOTTE DEPUIS LE FICHIER CSV ---
 if "df_flotte" not in st.session_state:
-    import pandas as pd
-    sheet_id = "1GVuk6zMSDGuLqlb2HqLT-zuVcaFQhbGOjied7e_L6Oo"
-    sheet_name = "flotte"
-    url_sheets = f"https://google.com{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
     try:
-        st.session_state["df_flotte"] = pd.read_csv(url_sheets)
+        st.session_state["df_flotte"] = pd.read_csv("sauvegarde_flotte.csv")
     except:
         columns_flotte = ["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"]
         st.session_state["df_flotte"] = pd.DataFrame(columns=columns_flotte)
