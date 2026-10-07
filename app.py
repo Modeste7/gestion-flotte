@@ -770,14 +770,14 @@ elif "Flotte globale" in menu:
             st.dataframe(df_affichage_v, use_container_width=True)
             
             # Petites statistiques rapides sur le parc
-            c1, c2 = st.columns(2)
-            with c1:
-                st.metric(label="Total Véhicules", value=len(df_flotte))
-            with c2:
-                taxis_count = len(df_flotte[df_flotte["Type de Service"] == "🚖 Taxi Communal"])
-                st.metric(label="Dont Taxis Communaux", value=taxis_count)
-        else:
-            st.info("Aucun véhicule enregistré dans votre flotte pour le moment.")
+        c1, c2 = st.columns(2)
+        with c1:
+            total_v = len(st.session_state["df_flotte"])
+            st.metric(label="Total Véhicules", value=total_v)
+        with c2:
+            df_f = st.session_state["df_flotte"]
+            taxis_count = len(df_f[df_f["Type de Service"] == "Taxi Communal"]) if not df_f.empty else 0
+            st.metric(label="Dont Taxis Communaux", value=taxis_count)
 elif "Gestion des Accès" in menu:
     st.title("🔑 Espace Donneur d'Accès (Réservé au DG)")
     st.subheader("📋 Liste des Comptes et Identifiants du Personnel")
