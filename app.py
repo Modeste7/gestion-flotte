@@ -711,7 +711,12 @@ elif "Flotte globale" in menu:
             st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
     else:
             try:
-                st.session_state["df_flotte"] = pd.read_csv(CSV_FILE_FLOTTE)
+                df_intermediaire = pd.read_csv(CSV_FILE_FLOTTE)
+                # Sécurité : Si le fichier sur GitHub existe mais est vide ou mal formaté
+                if df_intermediaire.empty or "Type de Service" not in df_intermediaire.columns:
+                    st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+                else:
+                    st.session_state["df_flotte"] = df_intermediaire
             except Exception:
                 st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
