@@ -768,21 +768,12 @@ elif "Flotte globale" in menu:
             # Filtre de recherche par immatriculation
             recherche_v = st.text_input("🔍 Filtrer par numéro d'immatriculation :")
             
-            df_affichage_v = df_flotte.copy()
-            if recherche_v:
-                df_affichage_v = df_affichage_v[df_affichage_v["Immatriculation"].str.contains(recherche_v, case=False, na=False)]
-                
-            st.dataframe(df_affichage_v, use_container_width=True)
-            
-            # Petites statistiques rapides sur le parc
-        c1, c2 = st.columns(2)
-        with c1:
-            total_v = len(st.session_state["df_flotte"])
-            st.metric(label="Total Véhicules", value=total_v)
-        with c2:
-            df_f = st.session_state["df_flotte"]
-            taxis_count = len(df_f[df_f["Type de Service"] == "Taxi Communal"]) if not df_f.empty else 0
-            st.metric(label="Dont Taxis Communaux", value=taxis_count)
+            # Affichage direct et ultra-sécurisé du tableau
+        st.write("### Liste des Véhicules Enregistrés")
+        if not st.session_state["df_flotte"].empty:
+            st.dataframe(st.session_state["df_flotte"])
+        else:
+            st.info("Aucun véhicule dans la flotte pour le moment.")
 elif "Gestion des Accès" in menu:
     st.title("🔑 Espace Donneur d'Accès (Réservé au DG)")
     st.subheader("📋 Liste des Comptes et Identifiants du Personnel")
