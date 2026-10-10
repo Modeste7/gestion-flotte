@@ -425,9 +425,26 @@ elif "1. Recettes" in menu:
     with st.container():
         col1, col2 = st.columns(2)
         with col1:
-            taxi_sel = st.selectbox("Sélectionner l'immatriculation du Taxi :", options=taxis_list if taxis_list else ["Aucun taxi configuré"])
+            # Barre de recherche rapide par numéros d'immatriculation
+            taxi_sel = st.selectbox(
+                "🔍 Rechercher l'immatriculation du Taxi :", 
+                options=taxis_list, 
+                index=None,
+                placeholder="Tapez le numéro (ex: 970)...",
+                key="select_taxi_recettes_recherche_rapide"
+            )
+            
+            # Récupération sécurisée de la liste des chauffeurs
             chauffeurs_list = df_chauffeurs["Nom Complet"].tolist() if not df_chauffeurs.empty else []
-            ch_sel = st.selectbox("Chauffeur de service :", options=chauffeurs_list if chauffeurs_list else ["Aucun chauffeur"])
+            
+            # Sélection du chauffeur associé
+            ch_sel = st.selectbox(
+                "👤 Chauffeur de service :", 
+                options=chauffeurs_list,
+                index=None,
+                placeholder="Sélectionnez le chauffeur...",
+                key="select_chauffeur_recettes"
+            )
             
             if not df_chauffeurs.empty and ch_sel != "Aucun chauffeur":
                 tel_chauffeur = df_chauffeurs[df_chauffeurs["Nom Complet"] == ch_sel]["Téléphone"].values[0]
