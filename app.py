@@ -452,11 +452,38 @@ elif "1. Recettes" in menu:
             st.rerun()
 
     st.markdown("---")
-    st.subheader("📜 Historique des Opérations Recettes")
+    st.subheader("📋 Historique des Opérations Recettes")
     df_affichage = st.session_state["df_taxis"].copy()
-    if "Date" in df_affichage.columns:
-        df_affichage = df_affichage.sort_values(by="Date", ascending=False)
-    st.dataframe(df_affichage, use_container_width=True)
+    
+    if not df_affichage.empty:
+        if "Date" in df_affichage.columns:
+            df_affichage = df_affichage.sort_values(by="Date", ascending=False)
+            
+        # --- VÉRIFICATION DU RÔLE DU DIRECTEUR GÉNÉRAL (DG) ---
+        if est_dg:
+            st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier directement les montants ou supprimer des lignes de recettes erronées.")
+            
+            # Le tableau devient un éditeur interactif uniquement pour le DG
+            df_recettes_edite = st.data_editor(
+                df_affichage, 
+                use_container_width=True, 
+                num_rows="dynamic", # Permet au DG de supprimer des lignes financières
+                key="editeur_recettes_dg"
+            )
+            
+            # Bouton de sauvegarde des modifications pour le DG
+            if st.button("💾 Enregistrer les modifications des Recettes"):
+                st.session_state["df_taxis"] = df_recettes_edite
+                # Sauvegarde synchronisée dans vos fichiers de recettes
+                st.session_state["df_taxis"].to_csv(CSV_FILE_RECETTES, index=False)
+                st.session_state["df_taxis"].to_csv("data_taxis.csv", index=False)
+                st.success("🎉 L'historique financier a été mis à jour avec succès sur GitHub !")
+                st.rerun()
+        else:
+            # Affichage classique en lecture seule pour le reste du personnel
+            st.dataframe(df_affichage, use_container_width=True, hide_index=True)
+    else:
+        st.info("Aucune recette enregistrée pour le moment.")
 
 
 # ==============================================================================
