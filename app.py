@@ -460,7 +460,8 @@ elif "1. Recettes" in menu:
             df_affichage = df_affichage.sort_values(by="Date", ascending=False)
             
         # --- VÉRIFICATION DU RÔLE DU DIRECTEUR GÉNÉRAL (DG) ---
-        if est_dg:
+        est_dg_dynamique = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
+        if est_dg_dynamique:
             st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier directement les montants ou supprimer des lignes de recettes erronées.")
             
             # Le tableau devient un éditeur interactif uniquement pour le DG
