@@ -33,6 +33,11 @@ COMPTES = {
     "secretaire": {"nom": "Secrétaire", "mp": "sec2026", "role": "SECRETAIRE"},
     "chauffeur": {"nom": "Chauffeur", "mp": "ch2026", "role": "CHAUFFEUR"}
 }
+# --- RECONNAISSANCE SÉCURISÉE DU DIRECTEUR GÉNÉRAL (DG) ---
+if "username" in st.session_state and st.session_state["username"] == "dg":
+    st.session_state["role"] = "DG"
+
+est_dg = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg"
 # # 1. BLOC COMPLET D'AUTHENTIFICATION SECURISEE
 # =========================================================
 if not st.session_state["authenticated"]:
