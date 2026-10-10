@@ -814,9 +814,10 @@ elif "Flotte globale" in menu:
             if recherche_v:
                 df_affichage = df_affichage[df_affichage["Immatriculation"].str.contains(recherche_v, case=False, na=False)]
             
-            # --- VÉRIFICATION SÉCURISÉE DE L'ACCÈS DIRECTION GÉNÉRALE ---
             # Cette variable vérifie si l'utilisateur en cours est bien connecté en tant que DG
-            est_dg = st.session_state.get("role") == "DG" or st.session_state.get("utilisateur") == "dg"
+            # --- VÉRIFICATION UNIVERSELLE DE LA CONNEXION DG ---
+            memoire_globale = str(st.session_state.to_dict()).lower()
+            est_dg = "'dg'" in memoire_globale or "dg2026" in memoire_globale
             
             if est_dg:
                 st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier directement les cases du tableau ou supprimer des lignes.")
