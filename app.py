@@ -358,42 +358,45 @@ elif "1. Recettes" in menu:
     st.title("🚕 Gestion des Taxis Communaux")
     st.subheader("📝 Suivi des Recettes Journalières - Taxis Communaux")
     
+    # --- CHARGEMENT ET CRÉATION AUTOMATIQUE DES LIGNES DE TRAJET ---
     if 'liste_gares_zones' not in st.session_state:
         try:
-            # Lecture du fichier permanent s'il existe
+            # Lecture automatique du fichier permanent sur GitHub
             import pandas as pd
             st.session_state['liste_gares_zones'] = pd.read_csv("trajets_officiel.csv")["Zone"].tolist()
         except Exception:
-            # Liste par défaut si le fichier n'existe pas encore
+            # Si le fichier n'existe pas, initialisation avec vos 3 zones de base
             st.session_state['liste_gares_zones'] = [
                 "Zone 1: Gare Riviera 2 ↔ Gare Cocody St Jean",
                 "Zone 2: Gare Palmeraie ↔ Gare Adjamé",
                 "Zone 3: Gare Yopougon Maroc ↔ Gare Plateau"
             ]
 
-with st.expander("➕ Configurer une nouvelle Ligne / Zone de trajet"):
-    col_g1, col_g2 = st.columns(2)
-with col_g1:
-    g_dep = st.text_input("Gare de Départ :", key="gd_input")
-with col_g2:
-    g_arr = st.text_input("Gare d'Arrivée :", key="ga_input")
-    
-if st.button("💾 Enregistrer la nouvelle Ligne"):
-    if g_dep.strip() != "" and g_arr.strip() != "":
-        n_zone = f"Zone {len(st.session_state['liste_gares_zones']) + 1}: {g_dep.strip()} ↔ {g_arr.strip()}"
-        
-        # Ajout dans la liste en mémoire
-        st.session_state['liste_gares_zones'].append(n_zone)
-        
-        # Sauvegarde automatique et immédiate dans le fichier CSV permanent
-        import pandas as pd
-        pd.DataFrame({"Zone": st.session_state['liste_gares_zones']}).to_csv("trajets_officiel.csv", index=False)
-        
-        st.success(f"🎉 Ligne ajoutée : {n_zone}")
-        st.rerun()
-    else:
-            st.error("⚠️ Veuillez remplir la gare de départ et d'arrivée.")
+    # --- FORMULAIRE D'AJOUT DE NOUVELLE GARE ---
+    with st.expander("➕ Configurer une nouvelle Ligne / Zone de trajet"):
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            g_dep = st.text_input("Gare de Départ :", key="gd_input_unique")
+        with col_g2:
+            g_arr = st.text_input("Gare d'Arrivée :", key="ga_input_unique")
+            
+        if st.button("💾 Enregistrer la nouvelle Ligne", key="btn_save_gare_unique"):
+            if g_dep.strip() != "" and g_arr.strip() != "":
+                # Formatage automatique du nom de la zone
+                n_zone = f"Zone {len(st.session_state['liste_gares_zones']) + 1}: {g_dep.strip()} ↔ {g_arr.strip()}"
                 
+                # Enregistrement dans la mémoire vive de l'application
+                st.session_state['liste_gares_zones'].append(n_zone)
+                
+                # Sauvegarde instantanée dans le fichier CSV permanent de GitHub
+                import pandas as pd
+                pd.DataFrame({"Zone": st.session_state['liste_gares_zones']}).to_csv("trajets_officiel.csv", index=False)
+                
+                st.success(f"🎉 Ligne ajoutée avec succès : {n_zone}")
+                st.rerun()
+            else:
+                st.error("⚠️ Veuillez remplir obligatoirement la gare de départ et la gare d'arrivée.")
+            
     st.markdown("---")
     taxis_list = df_flotte[df_flotte["Usage"] == "Taxi Communal"]["Immatriculation"].tolist()
     
