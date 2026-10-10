@@ -74,10 +74,11 @@ if "df_taxis" not in st.session_state:
 if "df_loc" not in st.session_state:
     st.session_state["df_loc"] = pd.DataFrame(columns=["Code Location", "Date Début", "Date Fin", "Prix Total (CFA)"])
 
-df_flotte = pd.DataFrame({
-    "Immatriculation": ["Test-001", "Test-002"],
-    "Usage": ["Taxi Communal", "Taxi Communal"]
-})
+# Chargement de la flotte réelle pour les listes déroulantes
+try:
+    df_flotte = pd.read_csv("flotte_officiel.csv")
+except Exception:
+    df_flotte = pd.DataFrame(columns=["Immatriculation", "Usage", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
 df_chauffeurs = pd.DataFrame({
     "Nom Complet": ["Chauffeur Test 1", "Chauffeur Test 2"],
