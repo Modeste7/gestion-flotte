@@ -79,6 +79,8 @@ if "df_taxis" not in st.session_state:
         structure_recettes = ["Date", "Immatriculation", "Recette", "Chauffeur", "Zone", "Statut"]
         st.session_state["df_taxis"] = pd.DataFrame(columns=structure_recettes)
 
+if "df_loc" not in st.session_state:
+    st.session_state["df_loc"] = pd.DataFrame(columns=["Code Location", "Date", "Montant"])
 # --- CHARGEMENT ET CRÉATION AUTOMATIQUE DES LIGNES DE TRAJET ---
 CSV_FILE_TRAJETS = "trajets_officiel.csv"
 
