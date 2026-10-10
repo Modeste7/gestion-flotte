@@ -361,6 +361,23 @@ if "Recettes Globales" in menu:
             st.warning(f"Option d'exportation indisponible pour le moment : {e}")
 elif "1. Recettes" in menu:
     st.title("🚕 Gestion des Taxis Communaux")
+    # --- SÉCURISATION ET CHARGEMENT DIRECT DES TAXIS POUR LA LISTE DÉROULANTE ---
+    import os
+    import pandas as pd
+    liste_taxis_dispo = []
+    if os.path.exists("flotte_officiel.csv"):
+        try:
+            df_flotte_lecture = pd.read_csv("flotte_officiel.csv")
+            # On récupère uniquement les véhicules enregistrés comme "Taxi Communal"
+            liste_taxis_dispo = df_flotte_lecture[df_flotte_lecture["Type de Service"] == "Taxi Communal"]["Immatriculation"].tolist()
+        except Exception:
+            pass
+        
+        # Si la mémoire de l'application est déjà chargée, on l'utilise en secours
+        if "df_flotte" in st.session_state and not st.session_state["df_flotte"].empty:
+            df_f = st.session_state["df_flotte"]
+            if "Type de Service" in df_f.columns and "Immatriculation" in df_f.columns:
+                liste_taxis_dispo = df_f[df_f["Type de Service"] == "Taxi Communal"]["Immatriculation"].tolist()
     st.subheader("📝 Suivi des Recettes Journalières - Taxis Communaux")
     
     # --- CHARGEMENT ET CRÉATION AUTOMATIQUE DES LIGNES DE TRAJET ---
