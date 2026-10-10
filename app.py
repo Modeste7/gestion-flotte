@@ -79,9 +79,19 @@ if "df_taxis" not in st.session_state:
         structure_recettes = ["Date", "Immatriculation", "Recette", "Chauffeur", "Zone", "Statut"]
         st.session_state["df_taxis"] = pd.DataFrame(columns=structure_recettes)
 
-if "df_loc" not in st.session_state:
-    st.session_state["df_loc"] = pd.DataFrame(columns=["Code Location", "Date Début", "Date Fin", "Prix Total (CFA)"])
+# --- CHARGEMENT ET CRÉATION AUTOMATIQUE DES LIGNES DE TRAJET ---
+CSV_FILE_TRAJETS = "trajets_officiel.csv"
 
+if "df_trajets" not in st.session_state:
+    try:
+        st.session_state["df_trajets"] = pd.read_csv(CSV_FILE_TRAJETS)
+    except Exception:
+        zones_initiales = [
+            {"Zone": "Zone 1: Gare Riviera 2 ↔ Gare Cocody St Jean"},
+            {"Zone": "Zone 2: Gare Palmeraie ↔ Gare Adjamé"},
+            {"Zone": "Zone 3: Gare Yopougon Maroc ↔ Gare Plateau"}
+        ]
+        st.session_state["df_trajets"] = pd.DataFrame(zones_initiales)
 # Chargement de la flotte réelle pour les listes déroulantes
 try:
     df_flotte = pd.read_csv("flotte_officiel.csv")
