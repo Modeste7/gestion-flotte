@@ -67,9 +67,17 @@ if not os.path.exists(EXCEL_PARC):
         pd.DataFrame(columns=["ID Client", "Nom Complet", "Téléphone", "Adresse"]).to_excel(writer, sheet_name="Clients", index=False)
         pd.DataFrame(columns=["ID Chauffeur", "Nom Complet", "Téléphone", "Numéro Permis", "Catégorie", "Expiration"]).to_excel(writer, sheet_name="Chauffeurs", index=False)
 
-# --- Initialisation des variables de recettes et locations en mémoire ---
+# --- CHARGEMENT ET CRÉATION AUTOMATIQUE DU FICHIER DES RECETTES ---
+CSV_FILE_RECETTES = "recettes_officiel.csv"
+
 if "df_taxis" not in st.session_state:
-    st.session_state["df_taxis"] = pd.DataFrame(columns=["Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"])
+    try:
+        # L'application essaie d'ouvrir le fichier s'il existe déjà
+        st.session_state["df_taxis"] = pd.read_csv(CSV_FILE_RECETTES)
+    except Exception:
+        # Solution radicale : Si le fichier n'existe pas, le code le crée instantanément en mémoire
+        structure_recettes = ["Date", "Immatriculation", "Recette", "Chauffeur", "Zone", "Statut"]
+        st.session_state["df_taxis"] = pd.DataFrame(columns=structure_recettes)
 
 if "df_loc" not in st.session_state:
     st.session_state["df_loc"] = pd.DataFrame(columns=["Code Location", "Date Début", "Date Fin", "Prix Total (CFA)"])
