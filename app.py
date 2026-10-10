@@ -446,9 +446,15 @@ elif "1. Recettes" in menu:
                 key="select_chauffeur_recettes"
             )
             
-            if not df_chauffeurs.empty and ch_sel != "Aucun chauffeur":
-                tel_chauffeur = df_chauffeurs[df_chauffeurs["Nom Complet"] == ch_sel]["Téléphone"].values[0]
+        if not df_chauffeurs.empty and ch_sel is not None and ch_sel != "Aucun chauffeur":
+            df_filtre = df_chauffeurs[df_chauffeurs["Nom Complet"] == ch_sel]
+            if not df_filtre.empty:
+                tel_chauffeur = df_filtre["Téléphone"].values[0]
                 st.success(f"📞 Contact Chauffeur : {tel_chauffeur}")
+            else:
+                tel_chauffeur = "Non renseigné"
+        else:
+            tel_chauffeur = "Aucun"
                 
         with col2:
             zone_sel = st.selectbox("Zone exploitée :", options=st.session_state['liste_gares_zones'])
