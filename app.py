@@ -96,10 +96,12 @@ if "df_trajets" not in st.session_state:
         st.session_state["df_trajets"] = pd.DataFrame(zones_initiales)
 # Chargement de la flotte réelle pour les listes déroulantes
 try:
-    df_flotte = pd.read_csv("flotte_officiel.csv")
+    st.session_state["df_flotte"] = pd.read_csv("flotte_officiel.csv")
 except Exception:
-    df_flotte = pd.DataFrame(columns=["Immatriculation", "Usage", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+    if "df_flotte" not in st.session_state:
+        st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
+df_flotte = st.session_state["df_flotte"]
 df_chauffeurs = pd.DataFrame({
     "Nom Complet": ["Chauffeur Test 1", "Chauffeur Test 2"],
     "Téléphone": ["0700000000", "0500000000"]
@@ -111,6 +113,7 @@ def sauvegarder_tout():
         sheet_id = "1GVuk6zMSDGuLqlb2HqLT-zuVcaFQhbGOjied7e_L6Oo"
         # Sauvegarde locale de secours
         st.session_state["df_taxis"].to_csv("sauvegarde_recettes.csv", index=False)
+        st.session_state["df_trajets"].to_csv("trajets_officiel.csv", index=False)
         st.sidebar.success("📈 Données synchronisées avec Google !")
     except Exception as e:
         st.sidebar.error(f"Erreur de sauvegarde : {e}")
