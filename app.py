@@ -805,18 +805,41 @@ elif "Flotte globale" in menu:
         # Filtre de recherche par immatriculation
         recherche_v = st.text_input("🔍 Filtrer par numéro d'immatriculation :", key="recherche_flotte_ong2")
         
-        df_affichage = st.session_state["df_flotte"]
+        df_affichage = st.session_state["df_flotte"].copy()
+        
         if not df_affichage.empty:
-            # Nettoyage automatique des lignes fantômes vides créées précédemment
+            # Nettoyage automatique des lignes fantômes vides
             df_affichage = df_affichage[df_affichage["Immatriculation"].notna() & (df_affichage["Immatriculation"] != "")]
             
             if recherche_v:
                 df_affichage = df_affichage[df_affichage["Immatriculation"].str.contains(recherche_v, case=False, na=False)]
             
-            st.dataframe(df_affichage, use_container_width=True, hide_index=True)
+            # --- VÉRIFICATION SÉCURISÉE DE L'ACCÈS DIRECTION GÉNÉRALE ---
+            # Cette variable vérifie si l'utilisateur en cours est bien connecté en tant que DG
+            est_dg = st.session_state.get("role") == "DG" or st.session_state.get("utilisateur") == "dg"
+            
+            if est_dg:
+                st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier directement les cases du tableau ou supprimer des lignes.")
+                
+                # Le tableau se transforme en éditeur dynamique pour le DG
+                df_edite = st.data_editor(
+                    df_affichage, 
+                    use_container_width=True, 
+                    num_rows="dynamic", # Permet au DG de rajouter ou supprimer des lignes
+                    key="editeur_flotte_dg"
+                )
+                
+                # Bouton de sauvegarde des modifications pour le DG
+                if st.button("💾 Enregistrer les modifications de la Flotte"):
+                    st.session_state["df_flotte"] = df_edite
+                    st.session_state["df_flotte"].to_csv(CSV_FILE_FLOTTE, index=False)
+                    st.success("🎉 Les modifications et suppressions ont été enregistrées avec succès sur GitHub !")
+                    st.rerun()
+            else:
+                # Affichage classique en lecture seule pour le gérant ou les chauffeurs
+                st.dataframe(df_affichage, use_container_width=True, hide_index=True)
         else:
             st.info("Aucun véhicule dans la flotte pour le moment.")
-    
 elif "Gestion des Accès" in menu:
         st.title("🔑 Gestion des Accès et Mots de Passe")
         st.subheader("Configuration de la table des utilisateurs")
