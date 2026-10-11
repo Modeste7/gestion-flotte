@@ -435,30 +435,33 @@ elif "1. Recettes" in menu:
             )
             
             # --- LECTURE DIRECTE ET SÉCURISÉE DES VRAIS CHAUFFEURS ---
-        import os
         import pandas as pd
+        import os
         
-        # --- SYNCHRONISATION DIRECTE ET PRIORITAIRE AVEC L'ONGLET 4 ---
+        # --- CHARGEMENT UNIVERSEL ET FORCÉ DE LA LISTE DES CHAUFFEURS ---
+        chauffeurs_list = []
+        
+        # 1. Extraction depuis la mémoire vive de l'application (df_chauffeurs)
         if "df_chauffeurs" in st.session_state and not st.session_state["df_chauffeurs"].empty:
-            chauffeurs_list = st.session_state["df_chauffeurs"]["Nom Complet"].dropna().astype(str).tolist()
-        else:
-            chauffeurs_list = []
-            
-        # Secours physique si la mémoire vive est momentanément inaccessible
+            df_ch_session = st.session_state["df_chauffeurs"]
+            if "Nom Complet" in df_ch_session.columns:
+                chauffeurs_list = df_ch_session["Nom Complet"].dropna().astype(str).tolist()
+                
+        # 2. Secours : Lecture directe du fichier physique de sauvegarde
         if not chauffeurs_list:
-            for nom_f in ["sauvegarde_chauffeurs.csv", "chauffeurs.csv"]:
-                import os
+            for nom_f in ["sauvegarde_chauffeurs.csv", "chauffeurs.csv", "data_chauffeurs.csv"]:
                 if os.path.exists(nom_f):
                     try:
-                        df_sec = pd.read_csv(nom_f)
-                        if "Nom Complet" in df_sec.columns:
-                            chauffeurs_list = df_sec["Nom Complet"].dropna().astype(str).tolist()
+                        df_secours_ch = pd.read_csv(nom_f)
+                        if "Nom Complet" in df_secours_ch.columns:
+                            chauffeurs_list = df_secours_ch["Nom Complet"].dropna().astype(str).tolist()
                             break
                     except Exception:
                         pass
                         
-        # Nettoyage des doublons et tri alphabétique de la liste
+        # 3. Nettoyage des textes, suppression des doublons et tri alphabétique
         if chauffeurs_list:
+            chauffeurs_list = [c.strip() for c in chauffeurs_list if c.strip() != ""]
             chauffeurs_list = sorted(list(set(chauffeurs_list)))
         ch_sel = st.selectbox(
             "👤 Chauffeur de service :",
