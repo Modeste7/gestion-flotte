@@ -434,18 +434,34 @@ elif "1. Recettes" in menu:
                 key="select_taxi_recettes_recherche_rapide"
             )
             
-            # Récupération sécurisée de la liste des chauffeurs
-            # Lecture de la liste des vrais conducteurs depuis la mémoire de l'application
-        if "df_chauffeurs" in st.session_state and not st.session_state["df_chauffeurs"].empty:
-            chauffeurs_list = st.session_state["df_chauffeurs"]["Nom Complet"].dropna().tolist()
-        else:
+            # --- LECTURE DIRECTE ET SÉCURISÉE DES VRAIS CHAUFFEURS ---
+        import os
+        import pandas as pd
+        
+        chauffeurs_list = []
+        
+        # 1. Tentative sur le fichier standard principal
+        if os.path.exists("chauffeurs.csv"):
             try:
-                import pandas as pd
-                # Secours direct depuis le fichier de stockage
-                chauffeurs_list = pd.read_csv("sauvegarde_chauffeurs.csv")["Nom Complet"].dropna().tolist()
+                df_ch_lecture = pd.read_csv("chauffeurs.csv")
+                if "Nom Complet" in df_ch_lecture.columns:
+                    chauffeurs_list = df_ch_lecture["Nom Complet"].dropna().tolist()
             except Exception:
-                chauffeurs_list = []
-            
+                pass
+                
+        # 2. Tentative de secours sur le deuxième nom de fichier possible
+        if not chauffeurs_list and os.path.exists("sauvegarde_chauffeurs.csv"):
+            try:
+                df_ch_lecture2 = pd.read_csv("sauvegarde_chauffeurs.csv")
+                if "Nom Complet" in df_ch_lecture2.columns:
+                    chauffeurs_list = df_ch_lecture2["Nom Complet"].dropna().tolist()
+            except Exception:
+                pass
+                
+        # 3. Dernier recours : si les fichiers CSV n'ont pas fini de charger, on utilise la mémoire vive
+        if not chauffeurs_list and "df_chauffeurs" in st.session_state and not st.session_state["df_chauffeurs"].empty:
+            if "Nom Complet" in st.session_state["df_chauffeurs"].columns:
+                chauffeurs_list = st.session_state["df_chauffeurs"]["Nom Complet"].dropna().tolist()
             # Sélection du chauffeur associé
             ch_sel = st.selectbox(
                 "👤 Chauffeur de service :", 
