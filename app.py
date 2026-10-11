@@ -458,18 +458,19 @@ elif "1. Recettes" in menu:
             except Exception:
                 pass
                 
-        # 3. Dernier recours : si les fichiers CSV n'ont pas fini de charger, on utilise la mémoire vive
-        if not chauffeurs_list and "df_chauffeurs" in st.session_state and not st.session_state["df_chauffeurs"].empty:
-            if "Nom Complet" in st.session_state["df_chauffeurs"].columns:
+        # --- BLOC DE SÉLECTION DU CHAUFFEUR ACCESSIBLE EN PERMANENCE ---
+        if not chauffeurs_list:
+            # Sécurité si les fichiers n'ont pas encore fini de charger au démarrage
+            if "df_chauffeurs" in st.session_state and not st.session_state["df_chauffeurs"].empty:
                 chauffeurs_list = st.session_state["df_chauffeurs"]["Nom Complet"].dropna().tolist()
-            # Sélection du chauffeur associé
-            ch_sel = st.selectbox(
-                "👤 Chauffeur de service :", 
-                options=chauffeurs_list,
-                index=None,
-                placeholder="Sélectionnez le chauffeur...",
-                key="select_chauffeur_recettes"
-            )
+
+        ch_sel = st.selectbox(
+            "👤 Chauffeur de service :",
+            options=chauffeurs_list,
+            index=None,
+            placeholder="Sélectionnez le chauffeur...",
+            key="select_chauffeur_recettes_permanent"
+        )
             # --- CRÉATION DE LA PASSERELLE DE SÉCURITÉ POUR LA LIGNE 474 ---
         if 'df_ch_lecture' in locals():
             df_chauffeurs = df_ch_lecture
