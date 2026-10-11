@@ -470,6 +470,13 @@ elif "1. Recettes" in menu:
                 placeholder="Sélectionnez le chauffeur...",
                 key="select_chauffeur_recettes"
             )
+            # --- CRÉATION DE LA PASSERELLE DE SÉCURITÉ POUR LA LIGNE 474 ---
+        if 'df_ch_lecture' in locals():
+            df_chauffeurs = df_ch_lecture
+        elif 'df_ch_lecture2' in locals():
+            df_chauffeurs = df_ch_lecture2
+        else:
+            df_chauffeurs = st.session_state.get("df_chauffeurs", pd.DataFrame(columns=["Nom Complet", "Téléphone"]))
             
         if not df_chauffeurs.empty and ch_sel is not None and ch_sel != "Aucun chauffeur":
             df_filtre = df_chauffeurs[df_chauffeurs["Nom Complet"] == ch_sel]
