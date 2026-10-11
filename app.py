@@ -828,21 +828,47 @@ elif "Identité des Chauffeurs" in menu:
 
     # --- ONGLET 2 : RÉPERTOIRE DES CHAUFFEURS ---
     with tab2:
-        st.subheader("🔍 Liste complète de vos conducteurs")
+        st.subheader("👥 Liste complète de vos conducteurs")
         
         if not df_chauffeurs.empty:
             # Barre de recherche dynamique
-            recherche_ch = st.text_input("🔍 Rechercher un conducteur par nom ou numéro de permis :")
+            recherche_ch = st.text_input("🔍 Rechercher un conducteur par nom ou permis :", key="search_ch_input_unique")
             
             df_affichage_ch = df_chauffeurs.copy()
             if recherche_ch:
                 df_affichage_ch = df_affichage_ch[
                     df_affichage_ch["Nom Complet"].str.contains(recherche_ch, case=False, na=False) |
-                    df_affichage_ch["Numéro Permis"].str.contains(recherche_ch, case=False, na=False)
+                    df_affichage_ch["Numéro Permis"].astype(str).str.contains(recherche_ch, case=False, na=False)
                 ]
+            
+            # --- VÉRIFICATION DU RÔLE DU DIRECTEUR GÉNÉRAL (DG) ---
+            est_dg_dynamique = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
+            
+            if est_dg_dynamique:
+                st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier les fiches ou supprimer un profil de chauffeur.")
                 
-            st.dataframe(df_affichage_ch, use_container_width=True)
-            st.metric(label="Total Chauffeurs Enregistrés", value=len(df_chauffeurs))
+                # Le tableau devient un éditeur interactif uniquement pour le DG
+                df_ch_edite = st.data_editor(
+                    df_affichage_ch,
+                    use_container_width=True,
+                    num_rows="dynamic", # Permet au DG de supprimer une ligne
+                    key="editeur_chauffeurs_dg_unique"
+                )
+                
+                # Bouton de sauvegarde des modifications pour le DG
+                if st.button("💾 Enregistrer les modifications des Chauffeurs", key="btn_save_ch_dg_final"):
+                    st.session_state["df_chauffeurs"] = df_ch_edite
+                    # Sauvegarde synchronisée dans vos fichiers de stockage
+                    st.session_state["df_chauffeurs"].to_csv("sauvegarde_chauffeurs.csv", index=False)
+                    if os.path.exists("chauffeurs.csv"):
+                        st.session_state["df_chauffeurs"].to_csv("chauffeurs.csv", index=False)
+                    st.success("🎉 Le répertoire des chauffeurs a été mis à jour avec succès sur GitHub !")
+                    st.rerun()
+            else:
+                # Affichage simple en lecture seule pour le personnel
+                st.dataframe(df_affichage_ch, use_container_width=True, hide_index=True)
+                
+            st.metric(label="Total Chauffeurs Enregistrés", value=len(df_affichage_ch))
         else:
             st.info("Aucun chauffeur enregistré pour le moment.")
 elif "Flotte globale" in menu:
