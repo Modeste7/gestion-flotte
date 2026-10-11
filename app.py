@@ -438,32 +438,28 @@ elif "1. Recettes" in menu:
         import os
         import pandas as pd
         
-        chauffeurs_list = []
-        
-        # 1. Tentative sur le fichier standard principal
-        if os.path.exists("chauffeurs.csv"):
-            try:
-                df_ch_lecture = pd.read_csv("chauffeurs.csv")
-                if "Nom Complet" in df_ch_lecture.columns:
-                    chauffeurs_list = df_ch_lecture["Nom Complet"].dropna().tolist()
-            except Exception:
-                pass
-                
-        # 2. Tentative de secours sur le deuxième nom de fichier possible
-        if not chauffeurs_list and os.path.exists("sauvegarde_chauffeurs.csv"):
-            try:
-                df_ch_lecture2 = pd.read_csv("sauvegarde_chauffeurs.csv")
-                if "Nom Complet" in df_ch_lecture2.columns:
-                    chauffeurs_list = df_ch_lecture2["Nom Complet"].dropna().tolist()
-            except Exception:
-                pass
-                
-        # --- BLOC DE SÉLECTION DU CHAUFFEUR ACCESSIBLE EN PERMANENCE ---
+        # --- SYNCHRONISATION DIRECTE ET PRIORITAIRE AVEC L'ONGLET 4 ---
+        if "df_chauffeurs" in st.session_state and not st.session_state["df_chauffeurs"].empty:
+            chauffeurs_list = st.session_state["df_chauffeurs"]["Nom Complet"].dropna().astype(str).tolist()
+        else:
+            chauffeurs_list = []
+            
+        # Secours physique si la mémoire vive est momentanément inaccessible
         if not chauffeurs_list:
-            # Sécurité si les fichiers n'ont pas encore fini de charger au démarrage
-            if "df_chauffeurs" in st.session_state and not st.session_state["df_chauffeurs"].empty:
-                chauffeurs_list = st.session_state["df_chauffeurs"]["Nom Complet"].dropna().tolist()
-
+            for nom_f in ["sauvegarde_chauffeurs.csv", "chauffeurs.csv"]:
+                import os
+                if os.path.exists(nom_f):
+                    try:
+                        df_sec = pd.read_csv(nom_f)
+                        if "Nom Complet" in df_sec.columns:
+                            chauffeurs_list = df_sec["Nom Complet"].dropna().astype(str).tolist()
+                            break
+                    except Exception:
+                        pass
+                        
+        # Nettoyage des doublons et tri alphabétique de la liste
+        if chauffeurs_list:
+            chauffeurs_list = sorted(list(set(chauffeurs_list)))
         ch_sel = st.selectbox(
             "👤 Chauffeur de service :",
             options=chauffeurs_list,
@@ -471,13 +467,15 @@ elif "1. Recettes" in menu:
             placeholder="Sélectionnez le chauffeur...",
             key="select_chauffeur_recettes_permanent"
         )
-            # --- CRÉATION DE LA PASSERELLE DE SÉCURITÉ POUR LA LIGNE 474 ---
-        if 'df_ch_lecture' in locals():
-            df_chauffeurs = df_ch_lecture
-        elif 'df_ch_lecture2' in locals():
-            df_chauffeurs = df_ch_lecture2
+            # --- PASSERELLE DE SÉCURITÉ UNIFIÉE POUR LES CHAUFFEURS ---
+        if "df_chauffeurs" in st.session_state:
+            df_chauffeurs = st.session_state["df_chauffeurs"]
         else:
-            df_chauffeurs = st.session_state.get("df_chauffeurs", pd.DataFrame(columns=["Nom Complet", "Téléphone"]))
+            try:
+                import pandas as pd
+                df_chauffeurs = pd.read_csv("sauvegarde_chauffeurs.csv")
+            except Exception:
+                df_chauffeurs = pd.DataFrame(columns=["Nom Complet", "Téléphone"])
             
         if not df_chauffeurs.empty and ch_sel is not None and ch_sel != "Aucun chauffeur":
             df_filtre = df_chauffeurs[df_chauffeurs["Nom Complet"] == ch_sel]
