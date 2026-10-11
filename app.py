@@ -435,7 +435,16 @@ elif "1. Recettes" in menu:
             )
             
             # Récupération sécurisée de la liste des chauffeurs
-            chauffeurs_list = df_chauffeurs["Nom Complet"].tolist() if not df_chauffeurs.empty else []
+            # Lecture de la liste des vrais conducteurs depuis la mémoire de l'application
+        if "df_chauffeurs" in st.session_state and not st.session_state["df_chauffeurs"].empty:
+            chauffeurs_list = st.session_state["df_chauffeurs"]["Nom Complet"].dropna().tolist()
+        else:
+            try:
+                import pandas as pd
+                # Secours direct depuis le fichier de stockage
+                chauffeurs_list = pd.read_csv("sauvegarde_chauffeurs.csv")["Nom Complet"].dropna().tolist()
+            except Exception:
+                chauffeurs_list = []
             
             # Sélection du chauffeur associé
             ch_sel = st.selectbox(
