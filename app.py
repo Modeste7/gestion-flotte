@@ -159,12 +159,14 @@ with st.sidebar:
     if role == "DG":
         options_menu.append("🔑 Gestion des Accès")
 
-# --- SEPARATION MAILLÉE : VITRINE CLIENTS vs ADMINISTRATION ---
+# --- SÉPARATION NETTE : VITRINE CLIENT vs GESTION INTERNE ---
         st.sidebar.markdown("### 🏬 Menu Principal")
+        
+        # Le selectbox reste dans la sidebar pour piloter l'application
         choix_univers = st.sidebar.selectbox(
             "Passerelle de l'application :", 
             ["🌐 Site Vitrine Commercial", "🏢 Administration & Gestion"],
-            key="select_univers_global_final"
+            key="select_univers_global_final_fix"
         )
 
         if choix_univers == "🌐 Site Vitrine Commercial":
@@ -189,7 +191,7 @@ with st.sidebar:
                 </style>
             """, unsafe_allow_html=True)
 
-            # 1. Grande Bannière d'Accueil Lumineuse
+            # 1. Grande Bannière d'Accueil Lumineuse (S'affiche au CENTRE maintenant)
             st.markdown("""
                 <div class='banner-vitrine'>
                     <h1 style='color: #1A202C; margin-bottom: 10px;'>Conduisez librement en Côte d'Ivoire</h1>
@@ -242,11 +244,11 @@ with st.sidebar:
                     </div>
                 """, unsafe_allow_html=True)
                 
-            # Blocage de sécurité : on arrête ici pour masquer la gestion technique aux clients
+            # Sécurité radicale : On arrête tout ici pour que rien d'autre ne s'affiche sur la page de la vitrine
             st.stop()
 
         elif choix_univers == "🏢 Administration & Gestion":
-            # --- LE MENU TECHNIQUE S'AFFICHE UNIQUEMENT POUR L'ADMINISTRATION ---
+            # --- LE MENU TECHNIQUE APPARAÎT UNIQUEMENT ICI ---
             st.sidebar.markdown("---")
             menu = st.sidebar.radio("📌 Navigation Principale", options_menu)
 # ==============================================================================
