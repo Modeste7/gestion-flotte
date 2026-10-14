@@ -160,97 +160,97 @@ with st.sidebar:
         options_menu.append("🔑 Gestion des Accès")
 
 # --- SÉPARATION NETTE : VITRINE CLIENT vs GESTION INTERNE ---
-        st.sidebar.markdown("### 🏬 Menu Principal")
+st.sidebar.markdown("### 🏬 Menu Principal")
+
+# Le selectbox reste dans la sidebar pour piloter l'application
+choix_univers = st.sidebar.selectbox(
+    "Passerelle de l'application :", 
+    ["🌐 Site Vitrine Commercial", "🏢 Administration & Gestion"],
+    key="select_univers_global_final_fix"
+)
+
+if choix_univers == "🌐 Site Vitrine Commercial":
+    # --- STYLE CSS POUR LE THÈME CLAIR ET PROFESSIONNEL ---
+    st.markdown("""
+        <style>
+            .banner-vitrine {
+                background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+                padding: 40px;
+                border-radius: 15px;
+                border-left: 8px solid #FF2B2B;
+                margin-bottom: 25px;
+            }
+            .card-premium-claire {
+                background-color: #FFFFFF;
+                padding: 25px;
+                border-radius: 12px;
+                box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+                border: 1px solid #E2E8F0;
+                text-align: center;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 1. Grande Bannière d'Accueil Lumineuse (S'affiche au CENTRE maintenant)
+    st.markdown("""
+        <div class='banner-vitrine'>
+            <h1 style='color: #1A202C; margin-bottom: 10px;'>Conduisez librement en Côte d'Ivoire</h1>
+            <p style='color: #4A5568; font-size: 1.1rem; max-width: 800px;'>
+                Découvrez une expérience de location unique avec notre sélection de véhicules modernes, entretenus et sécurisés. 
+                Réservez votre voiture à Abidjan en quelques clics.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 2. Section Catalogue et Catégories
+    st.write("### 🗂️ Explorez nos catégories de véhicules disponibles")
+    col_c1, col_c2, col_c3 = st.columns(3)
+    
+    with col_c1:
+        st.markdown("<div class='card-premium-claire'><h3>🚗 BERLINE</h3><p style='color:#718096;'>Confort & Économie en ville</p></div>", unsafe_allow_html=True)
+        st.button("Découvrir les Berlines", key="vitrine_view_berline")
         
-        # Le selectbox reste dans la sidebar pour piloter l'application
-        choix_univers = st.sidebar.selectbox(
-            "Passerelle de l'application :", 
-            ["🌐 Site Vitrine Commercial", "🏢 Administration & Gestion"],
-            key="select_univers_global_final_fix"
-        )
+    with col_c2:
+        st.markdown("<div class='card-premium-claire'><h3>🛻 PICK-UP</h3><p style='color:#718096;'>Puissance & Robustesse tout terrain</p></div>", unsafe_allow_html=True)
+        st.button("Découvrir les Pick-up", key="vitrine_view_pickup")
+        
+    with col_c3:
+        st.markdown("<div class='card-premium-claire'><h3>🚙 SUV & 4X4</h3><p style='color:#718096;'>Espace & Sécurité pour la famille</p></div>", unsafe_allow_html=True)
+        st.button("Découvrir les SUV", key="vitrine_view_suv")
 
-        if choix_univers == "🌐 Site Vitrine Commercial":
-            # --- STYLE CSS POUR LE THÈME CLAIR ET PROFESSIONNEL ---
-            st.markdown("""
-                <style>
-                    .banner-vitrine {
-                        background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
-                        padding: 40px;
-                        border-radius: 15px;
-                        border-left: 8px solid #FF2B2B;
-                        margin-bottom: 25px;
-                    }
-                    .card-premium-claire {
-                        background-color: #FFFFFF;
-                        padding: 25px;
-                        border-radius: 12px;
-                        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-                        border: 1px solid #E2E8F0;
-                        text-align: center;
-                    }
-                </style>
-            """, unsafe_allow_html=True)
-
-            # 1. Grande Bannière d'Accueil Lumineuse (S'affiche au CENTRE maintenant)
-            st.markdown("""
-                <div class='banner-vitrine'>
-                    <h1 style='color: #1A202C; margin-bottom: 10px;'>Conduisez librement en Côte d'Ivoire</h1>
-                    <p style='color: #4A5568; font-size: 1.1rem; max-width: 800px;'>
-                        Découvrez une expérience de location unique avec notre sélection de véhicules modernes, entretenus et sécurisés. 
-                        Réservez votre voiture à Abidjan en quelques clics.
-                    </p>
-                </div>
-            """, unsafe_allow_html=True)
+    st.markdown("---")
+    
+    # 3. Formulaire de Réservation Rapide
+    st.write("### 📅 Demande de réservation rapide (Moins de 2 minutes)")
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        with st.form("form_reservation_client"):
+            v_choix = st.selectbox("Type de véhicule souhaité :", ["Berline", "SUV / 4x4", "Pick-up"])
+            d_debut = st.date_input("Date de début de location :")
+            c_nom = st.text_input("Votre Nom complet :")
+            c_tel = st.text_input("Votre numéro de Téléphone (WhatsApp) :")
             
-            # 2. Section Catalogue et Catégories
-            st.write("### 🗂️ Explorez nos catégories de véhicules disponibles")
-            col_c1, col_c2, col_c3 = st.columns(3)
-            
-            with col_c1:
-                st.markdown("<div class='card-premium-claire'><h3>🚗 BERLINE</h3><p style='color:#718096;'>Confort & Économie en ville</p></div>", unsafe_allow_html=True)
-                st.button("Découvrir les Berlines", key="vitrine_view_berline")
+            if st.form_submit_button("🚀 Envoyer ma demande de réservation"):
+                st.success(f"🎉 Merci {c_nom}, votre demande pour un(e) {v_choix} a été transmise à notre équipe ! Nous vous contactons sur le {c_tel}.")
                 
-            with col_c2:
-                st.markdown("<div class='card-premium-claire'><h3>🛻 PICK-UP</h3><p style='color:#718096;'>Puissance & Robustesse tout terrain</p></div>", unsafe_allow_html=True)
-                st.button("Découvrir les Pick-up", key="vitrine_view_pickup")
-                
-            with col_c3:
-                st.markdown("<div class='card-premium-claire'><h3>🚙 SUV & 4X4</h3><p style='color:#718096;'>Espace & Sécurité pour la famille</p></div>", unsafe_allow_html=True)
-                st.button("Découvrir les SUV", key="vitrine_view_suv")
+    with col_f2:
+        st.markdown("""
+            <div style='background-color: #F7FAFC; padding: 30px; border-radius: 12px; border: 1px dashed #CBD5E0;'>
+                <h4>📞 Besoin d'assistance immédiate ?</h4>
+                <p style='color: #4A5568;'>Notre agence et nos conseillers sont à votre écoute pour vous accompagner :</p>
+                <p><b>📍 Agences :</b> Abidjan (Riviera, Palmeraie, Cocody, Plateau)</p>
+                <p><b>📱 Téléphone :</b> +225 07 16 98 50 14</p>
+                <p style='color: #E53E3E;'><b>⚠️ Service client disponible 7j/7</b></p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    # Sécurité radicale : On arrête tout ici pour que rien d'autre ne s'affiche sur la page de la vitrine
+    st.stop()
 
-            st.markdown("---")
-            
-            # 3. Formulaire de Réservation Rapide
-            st.write("### 📅 Demande de réservation rapide (Moins de 2 minutes)")
-            col_f1, col_f2 = st.columns(2)
-            with col_f1:
-                with st.form("form_reservation_client"):
-                    v_choix = st.selectbox("Type de véhicule souhaité :", ["Berline", "SUV / 4x4", "Pick-up"])
-                    d_debut = st.date_input("Date de début de location :")
-                    c_nom = st.text_input("Votre Nom complet :")
-                    c_tel = st.text_input("Votre numéro de Téléphone (WhatsApp) :")
-                    
-                    if st.form_submit_button("🚀 Envoyer ma demande de réservation"):
-                        st.success(f"🎉 Merci {c_nom}, votre demande pour un(e) {v_choix} a été transmise à notre équipe ! Nous vous contactons sur le {c_tel}.")
-                        
-            with col_f2:
-                st.markdown("""
-                    <div style='background-color: #F7FAFC; padding: 30px; border-radius: 12px; border: 1px dashed #CBD5E0;'>
-                        <h4>📞 Besoin d'assistance immédiate ?</h4>
-                        <p style='color: #4A5568;'>Notre agence et nos conseillers sont à votre écoute pour vous accompagner :</p>
-                        <p><b>📍 Agences :</b> Abidjan (Riviera, Palmeraie, Cocody, Plateau)</p>
-                        <p><b>📱 Téléphone :</b> +225 07 16 98 50 14</p>
-                        <p style='color: #E53E3E;'><b>⚠️ Service client disponible 7j/7</b></p>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-            # Sécurité radicale : On arrête tout ici pour que rien d'autre ne s'affiche sur la page de la vitrine
-            st.stop()
-
-        elif choix_univers == "🏢 Administration & Gestion":
-            # --- LE MENU TECHNIQUE APPARAÎT UNIQUEMENT ICI ---
-            st.sidebar.markdown("---")
-            menu = st.sidebar.radio("📌 Navigation Principale", options_menu)
+elif choix_univers == "🏢 Administration & Gestion":
+    # --- LE MENU TECHNIQUE APPARAÎT UNIQUEMENT ICI ---
+    st.sidebar.markdown("---")
+    menu = st.sidebar.radio("📌 Navigation Principale", options_menu)
 # ==============================================================================
 # # OPTION 5 : CALCUL DES RECETTES GLOBALES
 # ==============================================================================
