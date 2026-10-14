@@ -168,101 +168,96 @@ choix_univers = st.selectbox(
     ["🌐 Site Vitrine Commercial", "🏢 Administration & Gestion"],
     key="select_univers_global_final_fix"
 )
-
-# --- STRUCTURE GRAPHIQUE IMMERSIVE STYLE MYNK MOTORS ---
-st.markdown("""
-    <style>
-        /* 1. Fond sombre intégral pour l'application vitrine */
-        .stApp {
-            background-color: #0B0B0E !important;
-        }
-        /* 2. Forcer la lisibilité parfaite de tous les titres de rubriques */
-        h1, h2, h3, h4, p, span, label, div {
-            color: #FFFFFF !important;
-        }
-        /* 3. Masquage des marges blanches Streamlit inutiles */
-        .block-container {
-            padding-top: 2rem !important;
-            padding-bottom: 2rem !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- LA BANNIÈRE HÉROS GÉANTE IDENTIQUE À DEUX COLONNES ---
-col_gauche, col_droite = st.columns([1.1, 1])
-
-with col_gauche:
-    # Écriture du texte géant en HTML natif pour forcer l'affichage rouge et blanc
+if choix_univers == "🌐 Site Vitrine Commercial":
+    # Initialisation par défaut pour corriger les erreurs Pylance
+    menu = "Recettes Globales"
+    
+    # --- OVERRIDE DU LOOK PREMIUM (STYLE MYNK) ---
     st.markdown("""
-        <div style='padding-top: 30px; font-family: "Source Sans Pro", sans-serif;'>
-            <h1 style='font-size: 3.8rem; font-weight: 900; line-height: 1.05; color: #FFFFFF; margin-bottom: 0px;'>
+        <style>
+            /* Fond sombre intégral pour la vitrine */
+            .stApp {
+                background-color: #0E0E12 !important;
+            }
+            /* Tous les textes en blanc */
+            h1, h2, h3, h4, p, span, label, div {
+                color: #FFFFFF !important;
+            }
+            /* Style des boîtes de catégories */
+            .card-premium-sombre {
+                background-color: #16161E !important;
+                padding: 25px;
+                border-radius: 12px;
+                box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.4);
+                border: 1px solid #232330;
+                text-align: center;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # --- BANNIÈRE HÉROS : TEXTE GÉANT ---
+    st.markdown("""
+        <div style='padding-top: 30px; font-family: "Source Sans Pro", sans-serif; text-align: left;'>
+            <h1 style='font-size: 3.8rem; font-weight: 900; line-height: 1.1; color: #FFFFFF; margin-bottom: 0px;'>
                 Conduisez<br><span style='color: #FF2B2B;'>librement</span><br>avec
             </h1>
             <h2 style='font-size: 3.4rem; font-weight: 900; color: #FFFFFF; margin-top: 5px; margin-bottom: 25px;'>
                 Modeste Motors
             </h2>
-            <p style='color: #8A8A93; font-size: 1.15rem; line-height: 1.6; max-width: 460px; margin-bottom: 35px;'>
-                Découvrez une expérience de location unique avec notre sélection de véhicules modernes, entretenus et sécurisés. Réservez votre voiture à Abidjan en quelques clics.
-            </p>
         </div>
     """, unsafe_allow_html=True)
     
-    # Gros bouton d'action principal rouge style Mynk
-    st.button("🔴 Réserver maintenant ➔", key="btn_mynk_action_real")
-
-with col_droite:
-    # Insertion d'un véhicule SUV Premium de face sur fond noir profond identique
+    # --- AFFICHAGE DU VÉHICULE DE LUXE JUSTE EN DESSOUS ---
     st.image(
         "https://unsplash.com",
         use_container_width=True
     )
 
-st.markdown("<hr style='border-color: #1F1F26; margin-top: 40px; margin-bottom: 40px;'>", unsafe_allow_html=True)
-
-# 2. Section Catalogue et Catégories
-st.write("### 🗂️ Explorez nos catégories de véhicules disponibles")
-col_c1, col_c2, col_c3 = st.columns(3)
-
-with col_c1:
-    st.markdown("<div class='card-premium-sombre'><h3 style='color:#FFFFFF;'>🚗 BERLINE</h3><p style='color:#A0AEC0;'>Confort & Économie en ville</p></div>", unsafe_allow_html=True)
-    st.button("Découvrir les Berlines", key="vitrine_view_berline")
+    st.markdown("<hr style='border-color: #232330; margin: 40px 0;'>", unsafe_allow_html=True)
     
-with col_c2:
-    st.markdown("<div class='card-premium-sombre'><h3 style='color:#FFFFFF;'>🛻 PICK-UP</h3><p style='color:#A0AEC0;'>Puissance & Robustesse tout terrain</p></div>", unsafe_allow_html=True)
-    st.button("Découvrir les Pick-up", key="vitrine_view_pickup")
+    # --- SECTION DES TROIS CATÉGORIES EN HORIZONTAL ---
+    st.write("### 🗂️ Explorez nos catégories de véhicules disponibles")
+    col_c1, col_c2, col_c3 = st.columns(3)
     
-with col_c3:
-    st.markdown("<div class='card-premium-sombre'><h3 style='color:#FFFFFF;'>🚙 SUV & 4X4</h3><p style='color:#A0AEC0;'>Espace & Sécurité pour la famille</p></div>", unsafe_allow_html=True)
-    st.button("Découvrir les SUV", key="vitrine_view_suv")
-
-st.markdown("<hr style='border-color: #232330;'>", unsafe_allow_html=True)
-
-# 3. Formulaire de Réservation Rapide
-st.write("### 📅 Demande de réservation rapide (Moins de 2 minutes)")
-col_f1, col_f2 = st.columns(2)
-with col_f1:
-    with st.form("form_reservation_client"):
-        v_choix = st.selectbox("Type de véhicule souhaité :", ["Berline", "SUV / 4x4", "Pick-up"])
-        d_debut = st.date_input("Date de début de location :")
-        c_nom = st.text_input("Votre Nom complet :")
-        c_tel = st.text_input("Votre numéro de Téléphone (WhatsApp) :")
+    with col_c1:
+        st.markdown("<div class='card-premium-sombre'><h3>🚗 BERLINE</h3><p style='color:#A0AEC0;'>Confort & Ville</p></div>", unsafe_allow_html=True)
+        st.button("Découvrir les Berlines", key="btn_vitrine_berlines_final")
         
-        if st.form_submit_button("🚀 Envoyer ma demande de réservation"):
-            st.success(f"🎉 Merci {c_nom}, votre demande pour un(e) {v_choix} a été transmise à notre équipe ! Nous vous contactons sur le {c_tel}.")
-            
-with col_f2:
-    st.markdown("""
-        <div style='background-color: #16161E; padding: 30px; border-radius: 12px; border: 1px dashed #4A5568;'>
-            <h4 style='color: #FFFFFF;'>📞 Besoin d'assistance immédiate ?</h4>
-            <p style='color: #A0AEC0;'>Notre agence et nos conseillers sont à votre écoute pour vous accompagner :</p>
-            <p style='color: #FFFFFF;'><b>📍 Agences :</b> Abidjan (Riviera, Palmeraie, Cocody, Plateau)</p>
-            <p style='color: #FFFFFF;'><b>📱 Téléphone :</b> +225 07 16 98 50 14</p>
-            <p style='color: #FF2B2B;'><b>⚠️ Service client disponible 7j/7</b></p>
-        </div>
-    """, unsafe_allow_html=True)
+    with col_c2:
+        st.markdown("<div class='card-premium-sombre'><h3>🛻 PICK-UP</h3><p style='color:#A0AEC0;'>Puissance & Robustesse</p></div>", unsafe_allow_html=True)
+        st.button("Découvrir les Pick-up", key="btn_vitrine_pickups_final")
+        
+    with col_c3:
+        st.markdown("<div class='card-premium-sombre'><h3>🚙 SUV & 4X4</h3><p style='color:#A0AEC0;'>Espace & Sécurité</p></div>", unsafe_allow_html=True)
+        st.button("Découvrir les SUV", key="btn_vitrine_suvs_final")
+
+    st.markdown("<hr style='border-color: #232330; margin: 40px 0;'>", unsafe_allow_html=True)
     
-# Sécurité majeure : On stoppe ici pour que la gestion technique reste masquée
-st.stop()
+    # --- FORMULAIRE DE RÉSERVATION ET ZONE DE CONTACT ---
+    st.write("### 📅 Demande de réservation rapide (Moins de 2 minutes)")
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        with st.form("form_reservation_client_final"):
+            v_choix = st.selectbox("Type de véhicule souhaité :", ["Berline", "SUV / 4x4", "Pick-up"], key="sb_type_v_f")
+            d_debut = st.date_input("Date de début de location :", key="di_date_v_f")
+            c_nom = st.text_input("Votre Nom complet :", key="ti_nom_v_f")
+            c_tel = st.text_input("Votre numéro de Téléphone (WhatsApp) :", key="ti_tel_v_f")
+            
+            if st.form_submit_button("🚀 Envoyer ma demande de réservation"):
+                st.success(f"🎉 Merci {c_nom}, votre demande a été transmise ! Nous vous contactons sur le {c_tel}.")
+                
+    with col_f2:
+        st.markdown("""
+            <div style='background-color: #16161E; padding: 30px; border-radius: 12px; border: 1px dashed #4A5568;'>
+                <h4 style='color: #FFFFFF; margin-top: 0;'>📞 Besoin d'assistance immédiate ?</h4>
+                <p style='color: #A0AEC0;'>Notre agence et nos conseillers sont à votre écoute pour vous accompagner :</p>
+                <p style='color: #FFFFFF;'><b>📍 Agences :</b> Abidjan (Riviera, Palmeraie, Cocody, Plateau)</p>
+                <p style='color: #FFFFFF;'><b>📱 Téléphone :</b> +225 07 16 98 50 14</p>
+                <p style='color: #FF2B2B;'><b>⚠️ Service client disponible 7j/7</b></p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    st.stop()
 # ==============================================================================
 # # OPTION 5 : CALCUL DES RECETTES GLOBALES
 # ==============================================================================
