@@ -163,7 +163,7 @@ with st.sidebar:
 st.sidebar.markdown("### 🏬 Menu Principal")
 
 # Le selectbox reste dans la sidebar pour piloter l'application
-choix_univers = st.sidebar.selectbox(
+choix_univers = st.selectbox(
     "Passerelle de l'application :", 
     ["🌐 Site Vitrine Commercial", "🏢 Administration & Gestion"],
     key="select_univers_global_final_fix"
