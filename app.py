@@ -895,11 +895,18 @@ elif "Flotte globale" in menu:
             except Exception:
                 st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
-    # Définition des deux onglets
-    tab1, tab2 = st.tabs(["📝 Ajouter un Véhicule", "📊 Liste du Parc Automobile"])
+    # # Définition des deux onglets (Synchronisés avec le reste de votre code)
+    tab_ajout, tab2 = st.tabs(["Ajouter un Véhicule", "Liste du Parc Automobile"])
     
-    with tab1:
-        st.subheader("📝 Enregistrer un nouveau véhicule")
+    with tab_ajout:
+        # Affichage d'une vraie image HD de voiture urbaine moderne
+        st.image(
+            "https://unsplash.com",
+            caption="Enregistrement officiel des véhicules de la flotte",
+            use_container_width=True
+        )
+        
+        st.subheader("Enregistrer un nouveau véhicule")
         
         with st.form(key="form_flotte", clear_on_submit=True):
             col1, col2 = st.columns(2)
