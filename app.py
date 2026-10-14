@@ -169,59 +169,55 @@ choix_univers = st.sidebar.selectbox(
     key="select_univers_global_final_fix"
 )
 
-# --- OVERRIDE LE LOOK PREMIUM SOMBRE (STYLE MYNK) ---
+# --- STRUCTURE GRAPHIQUE IMMERSIVE STYLE MYNK MOTORS ---
 st.markdown("""
     <style>
-        /* Fond sombre luxueux pour la vitrine */
+        /* 1. Fond sombre intégral pour l'application vitrine */
         .stApp {
-            background-color: #0E0E12 !important;
+            background-color: #0B0B0E !important;
         }
-        /* Forcer tous les textes en blanc par défaut */
+        /* 2. Forcer la lisibilité parfaite de tous les titres de rubriques */
         h1, h2, h3, h4, p, span, label, div {
             color: #FFFFFF !important;
         }
-        /* Style des boîtes de catégories claires devenant sombres et épurées */
-        .card-premium-sombre {
-            background-color: #16161E !important;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.4);
-            border: 1px solid #232330;
-            text-align: center;
+        /* 3. Masquage des marges blanches Streamlit inutiles */
+        .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER HÉROS GÉANT : TEXTE À GAUCHE & IMAGE À DROITE ---
-col_hero1, col_hero2 = st.columns([1.2, 1])
+# --- LA BANNIÈRE HÉROS GÉANTE IDENTIQUE À DEUX COLONNES ---
+col_gauche, col_droite = st.columns([1.1, 1])
 
-with col_hero1:
+with col_gauche:
+    # Écriture du texte géant en HTML natif pour forcer l'affichage rouge et blanc
     st.markdown("""
-        <div style='padding-top: 40px;'>
-            <h1 style='font-size: 3.5rem; font-weight: 800; line-height: 1.1; margin-bottom: 5px; color: #FFFFFF;'>
+        <div style='padding-top: 30px; font-family: "Source Sans Pro", sans-serif;'>
+            <h1 style='font-size: 3.8rem; font-weight: 900; line-height: 1.05; color: #FFFFFF; margin-bottom: 0px;'>
                 Conduisez<br><span style='color: #FF2B2B;'>librement</span><br>avec
             </h1>
-            <h2 style='font-size: 3.2rem; font-weight: 800; color: #FFFFFF; margin-top: 0px; margin-bottom: 25px;'>
+            <h2 style='font-size: 3.4rem; font-weight: 900; color: #FFFFFF; margin-top: 5px; margin-bottom: 25px;'>
                 Modeste Motors
             </h2>
-            <p style='color: #A0AEC0; font-size: 1.1rem; line-height: 1.6; max-width: 450px; margin-bottom: 35px;'>
+            <p style='color: #8A8A93; font-size: 1.15rem; line-height: 1.6; max-width: 460px; margin-bottom: 35px;'>
                 Découvrez une expérience de location unique avec notre sélection de véhicules modernes, entretenus et sécurisés. Réservez votre voiture à Abidjan en quelques clics.
             </p>
         </div>
     """, unsafe_allow_html=True)
     
-    # Gros bouton rouge d'action
-    if st.button("Réserver ➔", key="btn_hero_mynk_style"):
-        pass
+    # Gros bouton d'action principal rouge style Mynk
+    st.button("🔴 Réserver maintenant ➔", key="btn_mynk_action_real")
 
-with col_hero2:
-    # Intégration d'un SUV de luxe détouré sur fond sombre pour créer l'effet visuel Mynk
+with col_droite:
+    # Insertion d'un véhicule SUV Premium de face sur fond noir profond identique
     st.image(
-        "https://unsplash.com", 
+        "https://unsplash.com",
         use_container_width=True
     )
 
-st.markdown("<hr style='border-color: #232330;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-color: #1F1F26; margin-top: 40px; margin-bottom: 40px;'>", unsafe_allow_html=True)
 
 # 2. Section Catalogue et Catégories
 st.write("### 🗂️ Explorez nos catégories de véhicules disponibles")
