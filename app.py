@@ -172,7 +172,7 @@ choix_univers = st.sidebar.selectbox(
     key="select_univers_global"
 )
 
-if choix_univers == "🌐 Site Vitrine Client":
+if choix_univers == "🌐 Site Vitrine Commercial":
     # --- STYLE CSS POUR LE THEME CLAIR ET PROFESSIONNEL ---
     st.markdown("""
         <style>
