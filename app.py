@@ -4,8 +4,8 @@ import os
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 
-# Connexion à la base de données Supabase via vos secrets
 url = "https://supabase.co"
+key = "sb_publishable_0hgy7utBz2OYJfHVMPBFNQ_jPLnx"
 key = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(url, key)
 # --- Configuration de l'application web ---
