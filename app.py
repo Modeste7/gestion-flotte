@@ -909,19 +909,14 @@ elif "Flotte globale" in menu:
     CSV_FILE_FLOTTE = "flotte_officiel.csv"
 
     # Chargement initial unifié dans la mémoire globale
-    if not os.path.exists(CSV_FILE_FLOTTE):
-            st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
-    else:
-            try:
-                df_intermediaire = pd.read_csv(CSV_FILE_FLOTTE)
-                # Sécurité : Si le fichier sur GitHub existe mais est vide ou mal formaté
-                if df_intermediaire.empty or "Type de Service" not in df_intermediaire.columns:
-                    st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
-                else:
-                    st.session_state["df_flotte"] = df_intermediaire
-            except Exception:
-                st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
-
+    try:
+        response = supabase.table("vehicules").select("*").execute()
+        import pandas as pd
+        df_flotte = pd.DataFrame(response.data)
+        st.session_state["df_flotte"] = df_flotte
+    except Exception as e:
+        st.error(f"Erreur de lecture Supabase : {e}")
+        st.session_state["df_flotte"] = pd.DataFrame()
     # # Définition des deux onglets (Synchronisés avec le reste de votre code)
     tab_ajout, tab2 = st.tabs(["Ajouter un Véhicule", "Liste du Parc Automobile"])
     
