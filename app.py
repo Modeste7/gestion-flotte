@@ -580,13 +580,12 @@ elif "Véhicules de Location" in menu:
     CSV_FILE_CLIENTS = "data_clients.csv"
 
     # Chargement initial des données de location
-    if os.path.exists(CSV_FILE_LOC):
-        try:
-            df_loc = pd.read_csv(CSV_FILE_LOC)
-        except Exception:
-            df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "immatriculation", "Prix Journalier (CFA)", "Nombre de Jours", "Caution (CFA)", "Montant Total (CFA)"])
-    else:
-        df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "immatriculation", "Prix Journalier (CFA)", "Nombre de Jours", "Caution (CFA)", "Montant Total (CFA)"])
+    # Chargement initial des données de location depuis Supabase
+    try:
+        response_loc = supabase.table("locations").select("*").execute()
+        df_loc = pd.DataFrame(response_loc.data)
+    except Exception as e:
+        df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "immatriculation", "Prix Journalier", "Nombre de Jours", "Caution", "Montant Total"])
 
     # Chargement de la liste des clients pour la sélection
     liste_clients = ["-- Choisir un client existant --"]
@@ -697,8 +696,31 @@ elif "Véhicules de Location" in menu:
         if not df_loc.empty:
             if "Date Enregistrement" in df_loc.columns:
                 df_loc = df_loc.sort_values(by="Date Enregistrement", ascending=False)
+            
+            # 🔓 SI L'UTILISATEUR CONNECTÉ EST LE DG -> Mode modification / suppression interactif
+            if est_dg:
+                st.info("👋 Bonjour Monsieur le DG. Vous pouvez modifier directement les cases ou supprimer une ligne (en cliquant dessus puis touche Suppr).")
                 
-            st.dataframe(df_loc, use_container_width=True)
+                # Tableau interactif de modification
+                edited_df_loc = st.data_editor(df_loc, num_rows="dynamic", key="editor_locations_dg", use_container_width=True)
+                
+                # Bouton pour valider les changements globaux
+                if st.button("💾 Enregistrer les modifications de la table"):
+                    try:
+                        # Supprime tout et réinsère pour synchroniser proprement (méthode simple pour commencer)
+                        supabase.table("locations").delete().neq("id", 0).execute()
+                        if not edited_df_loc.empty:
+                            # Conversion en dictionnaire pour Supabase
+                            nouveaux_choix = edited_df_loc.to_dict(orient="records")
+                            supabase.table("locations").insert(nouveaux_choix).execute()
+                        st.success("✅ Modifications appliquées avec succès !")
+                        st.rerun()
+                    except Exception as err:
+                        st.error(f"Erreur de mise à jour : {err}")
+            
+            # 🔒 SI CE N'EST PAS LE DG -> Simple tableau bloqué en lecture seule
+            else:
+                st.dataframe(df_loc, use_container_width=True)
             
             # Affichage des cumuls financiers
             t1, t2 = st.columns(2)
