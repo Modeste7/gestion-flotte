@@ -2,7 +2,12 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime, timedelta
+from supabase import create_client, Client
 
+# Connexion à la base de données Supabase via vos secrets
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(url, key)
 # --- Configuration de l'application web ---
 st.set_page_config(page_title="Gestion Flotte & Recettes", layout="wide")
 
@@ -12,7 +17,7 @@ if "df_clients" not in st.session_state:
 
 if "df_taxis" not in st.session_state:
     st.session_state["df_taxis"] = pd.DataFrame(columns=[
-        "Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"
+        "Date", "immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"
     ])
 
 # --- CHARGEMENT DE LA FLOTTE DEPUIS LE FICHIER CSV ---
@@ -20,7 +25,7 @@ if "df_flotte" not in st.session_state:
     try:
         st.session_state["df_flotte"] = pd.read_csv("flotte_officiel.csv")
     except:
-        columns_flotte = ["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"]
+        columns_flotte = ["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"]
         st.session_state["df_flotte"] = pd.DataFrame(columns=columns_flotte)
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -66,8 +71,8 @@ EXCEL_PARC = "gestion_parc_automobile.xlsx"
 # Initialisation du fichier Excel s'il n'existe pas
 if not os.path.exists(EXCEL_PARC):
     with pd.ExcelWriter(EXCEL_PARC, engine="openpyxl") as writer:
-        pd.DataFrame(columns=["Immatriculation", "Marque", "Modèle", "Usage"]).to_excel(writer, sheet_name="Flotte", index=False)
-        pd.DataFrame(columns=["Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"]).to_excel(writer, sheet_name="Recettes_Taxis", index=False)
+        pd.DataFrame(columns=["immatriculation", "Marque", "Modèle", "Usage"]).to_excel(writer, sheet_name="Flotte", index=False)
+        pd.DataFrame(columns=["Date", "immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"]).to_excel(writer, sheet_name="Recettes_Taxis", index=False)
         pd.DataFrame(columns=["Code Location", "Date Début", "Date Fin", "ID Client", "Nom Complet", "Téléphone", "Adresse", "Prix Total (CFA)"]).to_excel(writer, sheet_name="Locations", index=False)
         pd.DataFrame(columns=["ID Client", "Nom Complet", "Téléphone", "Adresse"]).to_excel(writer, sheet_name="Clients", index=False)
         pd.DataFrame(columns=["ID Chauffeur", "Nom Complet", "Téléphone", "Numéro Permis", "Catégorie", "Expiration"]).to_excel(writer, sheet_name="Chauffeurs", index=False)
@@ -81,7 +86,7 @@ if "df_taxis" not in st.session_state:
         st.session_state["df_taxis"] = pd.read_csv(CSV_FILE_RECETTES)
     except Exception:
         # Solution radicale : Si le fichier n'existe pas, le code le crée instantanément en mémoire
-        structure_recettes = ["Date", "Immatriculation", "Recette", "Chauffeur", "Zone", "Statut"]
+        structure_recettes = ["Date", "immatriculation", "Recette", "Chauffeur", "Zone", "Statut"]
         st.session_state["df_taxis"] = pd.DataFrame(columns=structure_recettes)
 
 if "df_loc" not in st.session_state:
@@ -104,7 +109,7 @@ try:
     st.session_state["df_flotte"] = pd.read_csv("flotte_officiel.csv")
 except Exception:
     if "df_flotte" not in st.session_state:
-        st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+        st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
 df_flotte = st.session_state["df_flotte"]
 df_chauffeurs = pd.DataFrame({
@@ -371,15 +376,15 @@ elif "1. Recettes" in menu:
         try:
             df_flotte_lecture = pd.read_csv("flotte_officiel.csv")
             # On récupère uniquement les véhicules enregistrés comme "Taxi Communal"
-            liste_taxis_dispo = df_flotte_lecture[df_flotte_lecture["Type de Service"] == "Taxi Communal"]["Immatriculation"].tolist()
+            liste_taxis_dispo = df_flotte_lecture[df_flotte_lecture["Type de Service"] == "Taxi Communal"]["immatriculation"].tolist()
         except Exception:
             pass
         
         # Si la mémoire de l'application est déjà chargée, on l'utilise en secours
         if "df_flotte" in st.session_state and not st.session_state["df_flotte"].empty:
             df_f = st.session_state["df_flotte"]
-            if "Type de Service" in df_f.columns and "Immatriculation" in df_f.columns:
-                liste_taxis_dispo = df_f[df_f["Type de Service"] == "Taxi Communal"]["Immatriculation"].tolist()
+            if "Type de Service" in df_f.columns and "immatriculation" in df_f.columns:
+                liste_taxis_dispo = df_f[df_f["Type de Service"] == "Taxi Communal"]["immatriculation"].tolist()
     st.subheader("📝 Suivi des Recettes Journalières - Taxis Communaux")
     
     # --- CHARGEMENT ET CRÉATION AUTOMATIQUE DES LIGNES DE TRAJET ---
@@ -422,7 +427,7 @@ elif "1. Recettes" in menu:
                 st.error("⚠️ Veuillez remplir obligatoirement la gare de départ et la gare d'arrivée.")
             
     st.markdown("---")
-    taxis_list = df_flotte[df_flotte["Usage"] == "Taxi Communal"]["Immatriculation"].tolist()
+    taxis_list = df_flotte[df_flotte["Usage"] == "Taxi Communal"]["immatriculation"].tolist()
     
     with st.container():
         col1, col2 = st.columns(2)
@@ -515,7 +520,7 @@ elif "1. Recettes" in menu:
         if bouton_valider:
             nouvelle_recette = {
                 "Date": date_r.strftime("%Y-%m-%d"),
-                "Immatriculation": taxi_sel,
+                "immatriculation": taxi_sel,
                 "Chauffeur": ch_sel,
                 "Zone / Ligne": zone_sel,
                 "Recette Brute (CFA)": recette_b,
@@ -579,9 +584,9 @@ elif "Véhicules de Location" in menu:
         try:
             df_loc = pd.read_csv(CSV_FILE_LOC)
         except Exception:
-            df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "Immatriculation", "Prix Journalier (CFA)", "Nombre de Jours", "Caution (CFA)", "Montant Total (CFA)"])
+            df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "immatriculation", "Prix Journalier (CFA)", "Nombre de Jours", "Caution (CFA)", "Montant Total (CFA)"])
     else:
-        df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "Immatriculation", "Prix Journalier (CFA)", "Nombre de Jours", "Caution (CFA)", "Montant Total (CFA)"])
+        df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "immatriculation", "Prix Journalier (CFA)", "Nombre de Jours", "Caution (CFA)", "Montant Total (CFA)"])
 
     # Chargement de la liste des clients pour la sélection
     liste_clients = ["-- Choisir un client existant --"]
@@ -646,7 +651,7 @@ elif "Véhicules de Location" in menu:
                 else:
                     nom_client = st.text_input("Nom complet du client *", value=client_selectionne, disabled=True)
                     
-                immatriculation = st.text_input("Immatriculation du véhicule *").upper()
+                immatriculation = st.text_input("immatriculation du véhicule *").upper()
                 
             with col2:
                 prix_journalier = st.number_input("Prix de location par jour (CFA) *", min_value=0, step=5000, value=25000)
@@ -669,7 +674,7 @@ elif "Véhicules de Location" in menu:
                 nouvelle_location = {
                     "Date Enregistrement": date_actuelle,
                     "Nom Client": nom_client.strip(),
-                    "Immatriculation": immatriculation.strip(),
+                    "immatriculation": immatriculation.strip(),
                     "Prix Journalier (CFA)": prix_journalier,
                     "Nombre de Jours": nb_jours,
                     "Caution (CFA)": caution_versee,
@@ -883,17 +888,17 @@ elif "Flotte globale" in menu:
 
     # Chargement initial unifié dans la mémoire globale
     if not os.path.exists(CSV_FILE_FLOTTE):
-            st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+            st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
     else:
             try:
                 df_intermediaire = pd.read_csv(CSV_FILE_FLOTTE)
                 # Sécurité : Si le fichier sur GitHub existe mais est vide ou mal formaté
                 if df_intermediaire.empty or "Type de Service" not in df_intermediaire.columns:
-                    st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+                    st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
                 else:
                     st.session_state["df_flotte"] = df_intermediaire
             except Exception:
-                st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+                st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
     # # Définition des deux onglets (Synchronisés avec le reste de votre code)
     tab_ajout, tab2 = st.tabs(["Ajouter un Véhicule", "Liste du Parc Automobile"])
@@ -921,25 +926,22 @@ elif "Flotte globale" in menu:
             
             if submit_vehicule:
                 if immatriculation.strip() == "" or marque_modele.strip() == "":
-                    st.error("⚠️ Veuillez remplir tous les champs obligatoires (Immatriculation et Marque/Modèle).")
+                    st.error("⚠️ Veuillez remplir tous les champs obligatoires (immatriculation et Marque/Modèle).")
                 else:
-                    import datetime
-                    # Le dictionnaire se crée UNIQUEMENT lors du clic sur le bouton
-                    nouveau_vehicule = {
-                        "Date Enregistrement": datetime.datetime.now().strftime("%Y-%m-%d"),
-                        "Immatriculation": immatriculation.strip().upper(),
-                        "Marque / Modèle": marque_modele.strip(),
-                        "Type de Service": type_service,
-                        "Statut Véhicule": statut_vehicule,
-                        "Usage": type_service
-                    }
-                    
-                    # Ajout et sauvegarde stricte dans le fichier permanent
-                    df_flotte = pd.concat([st.session_state['df_flotte'], pd.DataFrame([nouveau_vehicule])], ignore_index=True)
-                    df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
-                    st.session_state['df_flotte'] = df_flotte
-                    st.success(f"🎉 Véhicule {immatriculation.strip().upper()} enregistré avec succès !")
-                    st.rerun()
+                    try:
+                        # 1. Envoi direct à la base de données en ligne Supabase
+                        supabase.table("vehicules").insert({
+                            "immatriculation": immatriculation,
+                            "marque_modele": marque_modele,
+                            "type_service": type_service,
+                            "statut": statut_vehicule
+                        }).execute()
+                        
+                        # 2. Message de succès à l'écran
+                        st.success(f"🚘 Le véhicule {immatriculation} a été enregistré avec succès sur Supabase !")
+                        
+                    except Exception as e:
+                        st.error(f"Erreur lors de l'enregistrement en ligne : {e}")
 
     with tab2:
         st.subheader("📊 Liste des Véhicules Enregistrés")
@@ -947,14 +949,21 @@ elif "Flotte globale" in menu:
         # Filtre de recherche par immatriculation
         recherche_v = st.text_input("🔍 Filtrer par numéro d'immatriculation :", key="recherche_flotte_ong2")
         
-        df_affichage = st.session_state["df_flotte"].copy()
+        # Lecture en direct des véhicules depuis Supabase
+        try:
+            response = supabase.table("vehicules").select("*").execute()
+            import pandas as pd
+            df_affichage = pd.DataFrame(response.data)
+        except Exception as e:
+            st.error(f"Erreur de lecture des données : {e}")
+            df_affichage = pd.DataFrame()
         
         if not df_affichage.empty:
             # Nettoyage automatique des lignes fantômes vides
-            df_affichage = df_affichage[df_affichage["Immatriculation"].notna() & (df_affichage["Immatriculation"] != "")]
+            df_affichage = df_affichage[df_affichage["immatriculation"].notna() & (df_affichage["immatriculation"] != "")]
             
             if recherche_v:
-                df_affichage = df_affichage[df_affichage["Immatriculation"].str.contains(recherche_v, case=False, na=False)]
+                df_affichage = df_affichage[df_affichage["immatriculation"].str.contains(recherche_v, case=False, na=False)]
             
             # Cette variable vérifie si l'utilisateur en cours est bien connecté en tant que DG
             # --- VÉRIFICATION UNIVERSELLE DE LA CONNEXION DG ---
