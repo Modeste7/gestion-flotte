@@ -627,16 +627,16 @@ elif "Véhicules de Location" in menu:
                         nb_loc_mois = len(df_client_history)
 
                     # # 2. Calcul du cumul financier (Contrats + Cautions)
-            for col in df_client_history.columns:
-                if any(mot in col for mot in ["Montant", "Total", "Caution", "Prix"]):
-                    try:
-                        total_encaisse_client += float(pd.to_numeric(df_client_history[col]).sum())
-                    except Exception:
-                        pass
-            # Affichage de la fiche d'information corrigée
-            st.info(f"📊 **Statistiques de {client_selectionne} ce mois-ci :**\n"
-                    f"* Nombre de locations effectuées : **{nb_loc_mois}**\n"
-                    f"* Cumul financier total chez ce client (Contrats + Cautions) : **{total_encaisse_client:,.0f} CFA**".replace(",", " "))
+                for col in df_client_history.columns:
+                    if any(mot in col for mot in ["Montant", "Total", "Caution", "Prix"]):
+                        try:
+                            total_encaisse_client += float(pd.to_numeric(df_client_history[col]).sum())
+                        except Exception:
+                            pass
+                # Affichage de la fiche d'information corrigée
+                st.info(f"📊 **Statistiques de {client_selectionne} ce mois-ci :**\n"
+                        f"* Nombre de locations effectuées : **{nb_loc_mois}**\n"
+                        f"* Cumul financier total chez ce client (Contrats + Cautions) : **{total_encaisse_client:,.0f} CFA**".replace(",", " "))
         
         # 2. Formulaire principal des détails de la location
         with st.form(key="form_location", clear_on_submit=True):
