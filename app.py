@@ -622,6 +622,17 @@ elif "Véhicules de Location" in menu:
                         nb_loc_mois = len(df_client_history)
 
                     # # 2. Calcul du cumul financier (Contrats + Cautions)
+        # --- SÉCURISATION DE L'HISTORIQUE DES CLIENTS ---
+        if "df_client_history" not in locals() and "df_client_history" not in globals():
+            import pandas as pd
+            import os
+            if os.path.exists("contrats_location.csv"):
+                try:
+                    df_client_history = pd.read_csv("contrats_location.csv")
+                except Exception:
+                    df_client_history = pd.DataFrame(columns=["Nom complet du client", "Immatriculation du véhicule", "Montant de la location", "Statut"])
+            else:
+                df_client_history = pd.DataFrame(columns=["Nom complet du client", "Immatriculation du véhicule", "Montant de la location", "Statut"])
             for col in df_client_history.columns:
                 if any(mot in col for mot in ["Montant", "Total", "Caution", "Prix"]):
                     try:
