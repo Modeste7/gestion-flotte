@@ -1,18 +1,18 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # ==============================================================================
-# 1. INITIALISATION DE L'INTERFACE ET CONFIGURATION DE PAGE
+# 1. CONFIGURATION DE L'APPLICATION ET CONTEXTE SÉCURITÉ
 # ==============================================================================
 st.set_page_config(
-    page_title="Gestion Flotte & Recettes Pro", 
-    layout="wide", 
+    page_title="Gestion Flotte & Recettes", 
+    layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- BASE DE DONNÉES DES UTILISATEURS ET DES RÔLES ACCÈS ---
+# --- BASE DE DONNÉES CENTRALE DES COMPTES UTILISATEURS ---
 COMPTES = {
     "dg": {"nom": "Directeur Général", "mp": "dg2026", "role": "DG"},
     "gerant": {"nom": "Gérant", "mp": "gerant2026", "role": "GERANT"},
@@ -21,7 +21,7 @@ COMPTES = {
     "chauffeur": {"nom": "Chauffeur", "mp": "ch2026", "role": "CHAUFFEUR"}
 }
 
-# --- INITIALISATION SÉCURISÉE DES VARIABLES DE SESSION ---
+# --- INITIALISATION RIGOUREUSE DE L'ÉTAT DE SESSION ---
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 if "user_role" not in st.session_state:
@@ -29,164 +29,169 @@ if "user_role" not in st.session_state:
 if "user_name" not in st.session_state:
     st.session_state["user_name"] = None
 
-# --- CONSTANTES DES CHEMINS DE STOCKAGE (CSV & EXCEL) ---
-EXCEL_PARC = "gestion_parc_automobile.xlsx"
-CSV_FILE_RECETTES = "recettes_officiel.csv"
-CSV_FILE_TRAJETS = "trajets_officiel.csv"
-CSV_FILE_FLOTTE = "flotte_officiel.csv"
-CSV_FILE_CLIENTS = "clients_officiel.csv"
-CSV_FILE_CHAUFFEURS = "chauffeurs_officiel.csv"
-CSV_FILE_LOCATIONS = "locations_officiel.csv"
-
 # ==============================================================================
-# 2. ÉCRAN DE VÉRIFICATION ET D'AUTHENTIFICATION UNIQUE
+# 2. DIALOGUE D'AUTHENTIFICATION UNIQUE (ÉVITE L'ÉCRAN BLANC)
 # ==============================================================================
 if not st.session_state["authenticated"]:
-    st.title("🔒 Accès Sécurisé au Système")
-    st.subheader("Veuillez entrer vos identifiants d'entreprise pour déverrouiller vos modules")
+    st.title("🔒 Accès Sécurisé")
+    st.subheader("Veuillez entrer vos identifiants pour accéder à vos compartiments")
     
-    with st.form(key="formulaire_connexion_principal", clear_on_submit=True):
-        username_saisi = st.text_input("Nom d'utilisateur").strip().lower()
-        password_saisi = st.text_input("Mot de passe", type="password")
-        bouton_connexion = st.form_submit_button("Se connecter au réseau")
+    with st.form(key="login_form_entreprise", clear_on_submit=True):
+        username = st.text_input("Nom d'utilisateur").strip().lower()
+        password = st.text_input("Mot de passe", type="password")
+        submit_login = st.form_submit_button("Se connecter au réseau")
         
-    if bouton_connexion:
-        if username_saisi in COMPTES and COMPTES[username_saisi]["mp"] == password_saisi:
+    if submit_login:
+        if username in COMPTES and COMPTES[username]["mp"] == password:
             st.session_state["authenticated"] = True
-            st.session_state["user_role"] = COMPTES[username_saisi]["role"]
-            st.session_state["user_name"] = COMPTES[username_saisi]["nom"]
-            st.success(f"✅ Connexion établie. Bienvenue {st.session_state['user_name']} !")
+            st.session_state["user_role"] = COMPTES[username]["role"]
+            st.session_state["user_name"] = COMPTES[username]["nom"]
+            st.success(f"✅ Bienvenue {st.session_state['user_name']} !")
             st.rerun()
         else:
             st.error("❌ Identifiant ou mot de passe incorrect.")
-    st.stop()
+    st.stop()  # Arrêt strict uniquement ici tant que l'utilisateur n'est pas connecté
 
-# Assignation du rôle pour le reste du script
 role_actif = st.session_state["user_role"]
 
 # ==============================================================================
-# 3. MOTEUR DE CHARGEMENT DE DONNÉES ET GESTION DES FICHIERS
+# 3. CONFLITS DE BASES DE DONNÉES ET SYNCHRONISATION EXCEL / CSV
 # ==============================================================================
-def charger_base_donnees(chemin_csv, liste_colonnes, donnees_defaut=None):
-    """Charge un fichier CSV s'il existe, sinon l'initialise proprement en mémoire."""
+EXCEL_PARC = "gestion_parc_automobile.xlsx"
+CSV_RECETTES = "recettes_officiel.csv"
+CSV_TRAJETS = "trajets_officiel.csv"
+CSV_FLOTTE = "flotte_officiel.csv"
+CSV_CLIENTS = "clients_officiel.csv"
+CSV_CHAUFFEURS = "chauffeurs_officiel.csv"
+CSV_LOCATIONS = "locations_officiel.csv"
+
+def synchroniser_et_charger(chemin_csv, colonnes_cibles, par_defaut=None):
+    """Garantit le chargement transparent des données sans rupture de colonnes."""
     if os.path.exists(chemin_csv):
         try:
-            donnees_chargees = pd.read_csv(chemin_csv)
-            for colonne in liste_colonnes:
-                if colonne not in donnees_chargees.columns:
-                    donnees_chargees[colonne] = None
-            return donnees_chargees[liste_colonnes]
+            df = pd.read_csv(chemin_csv)
+            for c in colonnes_cibles:
+                if c not in df.columns:
+                    df[c] = None
+            return df[colonnes_cibles]
         except Exception:
             pass
-    if donnees_defaut is not None:
-        return pd.DataFrame(donnees_defaut)
-    return pd.DataFrame(columns=liste_colonnes)
+    if par_defaut is not None:
+        return pd.DataFrame(par_defaut)
+    return pd.DataFrame(columns=colonnes_cibles)
 
-# Chargement en mémoire vive (Session State)
+# Initialisation des structures en Session State
 if "df_flotte" not in st.session_state:
-    st.session_state["df_flotte"] = charger_base_donnees(CSV_FILE_FLOTTE, ["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+    st.session_state["df_flotte"] = synchroniser_et_charger(CSV_FLOTTE, ["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
 if "df_taxis" not in st.session_state:
-    st.session_state["df_taxis"] = charger_base_donnees(CSV_FILE_RECETTES, ["Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"])
+    st.session_state["df_taxis"] = synchroniser_et_charger(CSV_RECETTES, ["Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"])
 
 if "df_clients" not in st.session_state:
-    st.session_state["df_clients"] = charger_base_donnees(CSV_FILE_CLIENTS, ["ID Client", "Nom Complet", "Téléphone", "Adresse"])
+    st.session_state["df_clients"] = synchroniser_et_charger(CSV_CLIENTS, ["Nom Complet", "Téléphone", "Commune"])
 
 if "df_chauffeurs" not in st.session_state:
-    st.session_state["df_chauffeurs"] = charger_base_donnees(CSV_FILE_CHAUFFEURS, ["ID Chauffeur", "Nom Complet", "Téléphone", "Numéro Permis", "Catégorie", "Expiration"])
+    st.session_state["df_chauffeurs"] = synchroniser_et_charger(CSV_CHAUFFEURS, ["ID Chauffeur", "Nom Complet", "Téléphone", "Numéro Permis", "Catégorie", "Expiration"])
 
 if "df_loc" not in st.session_state:
-    st.session_state["df_loc"] = charger_base_donnees(CSV_FILE_LOCATIONS, ["Code Location", "Date Début", "Date Fin", "Immatriculation", "Nom Complet", "Prix Total (CFA)"])
+    st.session_state["df_loc"] = synchroniser_et_charger(CSV_LOCATIONS, ["Code Location", "Date Début", "Date Fin", "Immatriculation", "Nom Complet", "Prix Total (CFA)"])
 
 if "df_trajets" not in st.session_state:
-    lignes_predefinies = [
+    zones_init = [
         {"Zone / Ligne": "Zone 1: Gare Riviera 2 ↔ Gare Cocody St Jean"},
         {"Zone / Ligne": "Zone 2: Gare Palmeraie ↔ Gare Adjamé"},
         {"Zone / Ligne": "Zone 3: Gare Yopougon Maroc ↔ Gare Plateau"}
     ]
-    st.session_state["df_trajets"] = charger_base_donnees(CSV_FILE_TRAJETS, ["Zone / Ligne"], lignes_predefinies)
+    st.session_state["df_trajets"] = synchroniser_et_charger(CSV_TRAJETS, ["Zone / Ligne"], zones_init)
 
-# --- SÉCURITÉ : INITIALISATION DU MASTER FILE EXCEL SI ABSENT ---
+# --- ANCRAGE CLASSEUR CENTRAL EXCEL AUTOMATIQUE ---
 if not os.path.exists(EXCEL_PARC):
     try:
-        with pd.ExcelWriter(EXCEL_PARC, engine="openpyxl") as ecrivain_excel:
-            st.session_state["df_flotte"].to_excel(ecrivain_excel, sheet_name="Flotte", index=False)
-            st.session_state["df_taxis"].to_excel(ecrivain_excel, sheet_name="Recettes_Taxis", index=False)
-            st.session_state["df_loc"].to_excel(ecrivain_excel, sheet_name="Locations", index=False)
-            st.session_state["df_clients"].to_excel(ecrivain_excel, sheet_name="Clients", index=False)
-            st.session_state["df_chauffeurs"].to_excel(ecrivain_excel, sheet_name="Chauffeurs", index=False)
-    except Exception as erreur_initialisation:
-        st.error(f"Erreur d'initialisation du fichier Excel maître : {erreur_initialisation}")
+        with pd.ExcelWriter(EXCEL_PARC, engine="openpyxl") as master_writer:
+            st.session_state["df_flotte"].to_excel(master_writer, sheet_name="Flotte", index=False)
+            st.session_state["df_taxis"].to_excel(master_writer, sheet_name="Recettes_Taxis", index=False)
+            st.session_state["df_loc"].to_excel(master_writer, sheet_name="Locations", index=False)
+            st.session_state["df_clients"].to_excel(master_writer, sheet_name="Clients", index=False)
+            st.session_state["df_chauffeurs"].to_excel(master_writer, sheet_name="Chauffeurs", index=False)
+    except Exception:
+        pass
 
-# ==============================================================================
-# 4. FONCTION DE PERSISTANCE ATOMIQUE (CRITURE CONCURRENTE)
-# ==============================================================================
-def enregistrer_modifications_locales():
-    """Sauvegarde de manière synchrone toutes les bases de données mémoires vers CSV et Excel."""
+def sauvegarder_donnees_globales():
+    """Commit physique complet des structures vers le stockage disque local."""
     try:
-        # Étape A: Écriture des bases au format CSV individuel
-        st.session_state["df_flotte"].to_csv(CSV_FILE_FLOTTE, index=False)
-        st.session_state["df_taxis"].to_csv(CSV_FILE_RECETTES, index=False)
-        st.session_state["df_clients"].to_csv(CSV_FILE_CLIENTS, index=False)
-        st.session_state["df_chauffeurs"].to_csv(CSV_FILE_CHAUFFEURS, index=False)
-        st.session_state["df_loc"].to_csv(CSV_FILE_LOCATIONS, index=False)
-        st.session_state["df_trajets"].to_csv(CSV_FILE_TRAJETS, index=False)
+        st.session_state["df_flotte"].to_csv(CSV_FLOTTE, index=False)
+        st.session_state["df_taxis"].to_csv(CSV_RECETTES, index=False)
+        st.session_state["df_clients"].to_csv(CSV_CLIENTS, index=False)
+        st.session_state["df_chauffeurs"].to_csv(CSV_CHAUFFEURS, index=False)
+        st.session_state["df_loc"].to_csv(CSV_LOCATIONS, index=False)
+        st.session_state["df_trajets"].to_csv(CSV_TRAJETS, index=False)
         
-        # Étape B: Compilation générale dans le fichier Excel d'entreprise
-        with pd.ExcelWriter(EXCEL_PARC, engine="openpyxl") as synchro_excel:
-            st.session_state["df_flotte"].to_excel(synchro_excel, sheet_name="Flotte", index=False)
-            st.session_state["df_taxis"].to_excel(synchro_excel, sheet_name="Recettes_Taxis", index=False)
-            st.session_state["df_loc"].to_excel(synchro_excel, sheet_name="Locations", index=False)
-            st.session_state["df_clients"].to_excel(synchro_excel, sheet_name="Clients", index=False)
-            st.session_state["df_chauffeurs"].to_excel(synchro_excel, sheet_name="Chauffeurs", index=False)
-            st.session_state["df_trajets"].to_excel(synchro_excel, sheet_name="Trajets_Réseaux", index=False)
-            
-        st.sidebar.success("💾 Base de données synchronisée (CSV & Excel) !")
-    except Exception as e:
-        st.sidebar.error(f"❌ Échec de la sauvegarde sur le disque : {e}")
+        with pd.ExcelWriter(EXCEL_PARC, engine="openpyxl") as writer:
+            st.session_state["df_flotte"].to_excel(writer, sheet_name="Flotte", index=False)
+            st.session_state["df_taxis"].to_excel(writer, sheet_name="Recettes_Taxis", index=False)
+            st.session_state["df_loc"].to_excel(writer, sheet_name="Locations", index=False)
+            st.session_state["df_clients"].to_excel(writer, sheet_name="Clients", index=False)
+            st.session_state["df_chauffeurs"].to_excel(writer, sheet_name="Chauffeurs", index=False)
+        st.sidebar.success("💾 Synchronisation complète effectuée !")
+    except Exception as error:
+        st.sidebar.error(f"Erreur d'écriture disque : {error}")
 
 # ==============================================================================
-# 5. CONTRÔLE DE NAVIGATION LATÉRALE ET COMPARTIMENTAGE DYNAMIQUE
+# 4. ARCHITECTURE NAVIGATION : BARRE LATÉRALE ET PRIVILÈGES
 # ==============================================================================
 with st.sidebar:
-    st.markdown(f"### 👤 {st.session_state['user_name']}")
-    st.markdown(f"Rôle d'accès : `{role_actif}`")
+    st.write(f"👤 Connecté : **{st.session_state['user_name']}**")
+    st.write(f"🔑 Rôle système : `{role_actif}`")
     st.markdown("---")
     
-    # Filtrage algorithmique des droits d'affichage selon le rôle utilisateur
-    routes_autorisees = []
+    options_menu = []
     
     if role_actif in ["DG", "GERANT"]:
-        routes_autorisees.append("📊 5. Calcul des Recettes Globales")
-        
+        options_menu.append("📊 5. Calcul des Recettes Globales")
     if role_actif in ["DG", "GERANT", "ADJOINT", "SECRETAIRE", "CHAUFFEUR"]:
-        routes_autorisees.append("🚖 1. Recettes Taxis Communaux")
-        
+        options_menu.append("🚖 1. Recettes Taxis Communaux")
     if role_actif in ["DG", "GERANT", "ADJOINT", "SECRETAIRE"]:
-        routes_autorisees.append("🚗 2. Véhicules de Location & Prix")
-        routes_autorisees.append("👥 3. Identité des Clients")
-        
+        options_menu.append("🚗 2. Véhicules de Location & Prix")
+        options_menu.append("👥 3. Identité des Clients")
     if role_actif in ["DG", "GERANT", "ADJOINT"]:
-        routes_autorisees.append("👨‍✈️ 4. Identité des Chauffeurs")
-        
+        options_menu.append("👨‍✈️ 4. Identité des Chauffeurs")
     if role_actif in ["DG", "GERANT"]:
-        routes_autorisees.append("⚙️ Configuration Flotte globale")
-        
+        options_menu.append("⚙️ Configuration Flotte globale")
     if role_actif == "DG":
-        routes_autorisees.append("🔑 Gestion des Accès")
+        options_menu.append("🔑 Gestion des Accès")
 
-    st.markdown("### 🏬 Navigation Système")
-    choix_menu = st.radio("Sélectionnez votre module opérationnel :", routes_autorisees)
+    st.markdown("### 🏬 Menu Principal")
+    menu_selection = st.radio("📌 Navigation Principale", options_menu)
     st.markdown("---")
     
-    # Actions rapides de la barre de contrôle latérale
-    if st.button("💾 Enregistrer toutes les écritures", use_container_width=True):
-        enregistrer_modifications_locales()
+    if st.button("💾 Enregistrer les Modifications", use_container_width=True):
+        sauvegarder_donnees_globales()
         
-    if st.button("🚪 Fermer la Session", use_container_width=True):
+    if st.button("🚪 Se Déconnecter", use_container_width=True):
         st.session_state["authenticated"] = False
-        st.session_state["user_role"] = None
-        st.session_state["user_name"] = None
         st.rerun()
 
 # ==============================================================================
+# 5. INTEGRATION ET BRANCHEMENT DES COMPARTIMENTS OPERATIONNELS
+# ==============================================================================
+st.title(f"📍 {menu_selection}")
+
+# Extraction dynamique des interdépendances pour les menus déroulants
+flotte_active = st.session_state["df_flotte"]
+liste_taxis = flotte_active[flotte_active["Type de Service"] == "Taxi Communal"]["Immatriculation"].tolist()
+liste_locations = flotte_active[flotte_active["Type de Service"] == "Location"]["Immatriculation"].tolist()
+liste_chauffeurs = st.session_state["df_chauffeurs"]["Nom Complet"].tolist()
+liste_clients = st.session_state["df_clients"]["Nom Complet"].tolist()
+liste_zones = st.session_state["df_trajets"]["Zone / Ligne"].tolist()
+
+# --- DISPATCHING ROBUSTE DES COMPARTIMENTS ---
+
+# ------------------------------------------------------------------------------
+# 🚖 INTERFACE 1 : RECETTES TAXIS COMMUNAUX
+# ------------------------------------------------------------------------------
+if "1. Recettes Taxis Communaux" in menu_selection:
+    st.header("Suivi quotidien opérationnel des Taxis Communaux")
+    t_saisie, t_historique = st.tabs(["📥 Déclaration de Caisse", "📜 Historique"])
+    
+    with t_saisie:
+        if not liste_taxis:
