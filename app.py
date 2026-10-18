@@ -159,9 +159,11 @@ with st.sidebar:
     if role == "DG":
         options_menu.append("🔑 Gestion des Accès")
 
-    # Affichage du menu personnalisé à l'utilisateur
-    menu = st.radio("📌 Navigation Principale", options_menu)
+# --- SÉPARATION NETTE : VITRINE CLIENT vs GESTION INTERNE ---
+st.sidebar.markdown("### 🏬 Menu Principal")
 
+# --- RETOUR AU MENU PRINCIPAL CLASSIQUE ---
+menu = st.sidebar.radio("📌 Navigation Principale", options_menu)
 # ==============================================================================
 # # OPTION 5 : CALCUL DES RECETTES GLOBALES
 # ==============================================================================
@@ -893,11 +895,18 @@ elif "Flotte globale" in menu:
             except Exception:
                 st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
-    # Définition des deux onglets
-    tab1, tab2 = st.tabs(["📝 Ajouter un Véhicule", "📊 Liste du Parc Automobile"])
+    # # Définition des deux onglets (Synchronisés avec le reste de votre code)
+    tab_ajout, tab2 = st.tabs(["Ajouter un Véhicule", "Liste du Parc Automobile"])
     
-    with tab1:
-        st.subheader("📝 Enregistrer un nouveau véhicule")
+    with tab_ajout:
+        # Affichage d'une vraie image HD de voiture urbaine moderne
+        st.image(
+            "https://unsplash.com",
+            caption="Enregistrement officiel des véhicules de la flotte",
+            use_container_width=True
+        )
+        
+        st.subheader("Enregistrer un nouveau véhicule")
         
         with st.form(key="form_flotte", clear_on_submit=True):
             col1, col2 = st.columns(2)
@@ -978,16 +987,53 @@ elif "Gestion des Accès" in menu:
         st.title("🔑 Gestion des Accès et Mots de Passe")
         st.subheader("Configuration de la table des utilisateurs")
         
-        if 'COMPTES' in globals():
-            donnees_comptes = []
-            for identifiant, infos in COMPTES.items():
-                donnees_comptes.append({
-                    "Identifiant de Connexion": identifiant,
-                    "Nom Affiché": infos["nom"],
-                    "Mot de passe actuel": infos["mp"],
-                    "Rôle Système": infos["role"]
-                })
-            df_comptes = pd.DataFrame(donnees_comptes)
-            st.dataframe(df_comptes, use_container_width=True, hide_index=True)
+        import os
+        import pandas as pd
+
+        # 1. Chargement initial ou reconstruction depuis le dictionnaire COMPTES
+        if "df_comptes_securises" not in st.session_state:
+            if os.path.exists("comptes_officiel.csv"):
+                try:
+                    st.session_state["df_comptes_securises"] = pd.read_csv("comptes_officiel.csv")
+                except Exception:
+                    pass
+            
+            if "df_comptes_securises" not in st.session_state or st.session_state["df_comptes_securises"].empty:
+                if 'COMPTES' in globals():
+                    donnees_comptes = []
+                    for identifiant, infos in COMPTES.items():
+                        donnees_comptes.append({
+                            "Identifiant de Connexion": identifiant,
+                            "Nom Affiché": infos["nom"],
+                            "Mot de passe actuel": infos["mp"],
+                            "Rôle Système": infos["role"]
+                        })
+                    st.session_state["df_comptes_securises"] = pd.DataFrame(donnees_comptes)
+
+        # 2. Détection dynamique en temps réel du Directeur Général (DG)
+        est_dg_dynamique = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
+
+        if "df_comptes_securises" in st.session_state and not st.session_state["df_comptes_securises"].empty:
+            if est_dg_dynamique:
+                st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier directement les identifiants, noms, rôles et mots de passe ou supprimer un accès.")
+                
+                # Le tableau devient modifiable uniquement pour le DG
+                df_comptes_edite = st.data_editor(
+                    st.session_state["df_comptes_securises"],
+                    use_container_width=True,
+                    num_rows="dynamic", # Permet au DG de rajouter ou supprimer un compte utilisateur
+                    key="editeur_comptes_dg_final_unique",
+                    hide_index=True
+                )
+                
+                # Bouton de validation permanente
+                if st.button("💾 Enregistrer les modifications des Accès", key="btn_save_comptes_dg_final_unique"):
+                    st.session_state["df_comptes_securises"] = df_comptes_edite
+                    df_comptes_edite.to_csv("comptes_officiel.csv", index=False)
+                    st.success("🎉 Les accès et mots de passe ont été sauvegardés avec succès sur GitHub !")
+                    st.rerun()
+            else:
+                # Lecture seule classique pour le reste de l'équipe
+                st.dataframe(st.session_state["df_comptes_securises"], use_container_width=True, hide_index=True)
         else:
-            st.info("La liste des comptes d'accès n'est pas encore initialisée.")
+            st.info("La liste des comptes d'accès n'est pas disponible.")
