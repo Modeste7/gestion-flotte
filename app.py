@@ -639,7 +639,9 @@ elif "Véhicules de Location" in menu:
         
         if not df_client_history.empty and "Nom complet du client" in df_client_history.columns:
             # On filtre l'historique sur le client sélectionné
-            df_filtre_c = df_client_history[df_client_history["Nom complet du client"] == client_selectionne]
+            # Détection automatique de la bonne colonne de nom dans le CSV
+            col_nom = "Nom Client" if "Nom Client" in df_client_history.columns else "Nom complet du client"
+            df_filtre_c = df_client_history[df_client_history[col_nom] == client_selectionne]
             nb_loc_mois = len(df_filtre_c)
             
             for col in df_client_history.columns:
@@ -712,9 +714,31 @@ elif "Véhicules de Location" in menu:
         if not df_loc.empty:
             if "Date Enregistrement" in df_loc.columns:
                 df_loc = df_loc.sort_values(by="Date Enregistrement", ascending=False)
-                
-            st.dataframe(df_loc, use_container_width=True)
             
+            # --- VERIFICATION EN TEMPS REEL DU ROLE DU DIRECTEUR GENERAL (DG) ---
+            est_dg_dynamique = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
+            
+            if est_dg_dynamique:
+                st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier directement les lignes de contrats ou supprimer une location erronée.")
+                
+                # Le tableau devient un éditeur interactif uniquement pour le DG
+                df_loc_edite = st.data_editor(
+                    df_loc,
+                    use_container_width=True,
+                    num_rows="dynamic", # Permet au DG de supprimer des lignes
+                    key="editeur_global_locations_dg_final"
+                )
+                
+                # Bouton de sauvegarde des modifications pour le DG
+                if st.button("💾 Enregistrer les modifications des Locations", key="btn_save_locations_global_dg_final"):
+                    # On cherche à retrouver le vrai nom de fichier utilisé au chargement de df_loc
+                    nom_f_contrat = "contrats_location.csv" if "contrats_location.csv" in globals() or os.path.exists("contrats_location.csv") else "sauvegarde_flotte.csv"
+                    df_loc_edite.to_csv(nom_f_contrat, index=False)
+                    st.success("🎉 L'historique global des locations a été mis à jour avec succès !")
+                    st.rerun()
+            else:
+                # Affichage classique en lecture seule pour le personnel
+                st.dataframe(df_loc, use_container_width=True, hide_index=True)
             # Affichage des cumuls financiers
             t1, t2 = st.columns(2)
             with t1:
