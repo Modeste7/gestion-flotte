@@ -2,11 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime, timedelta
-from supabase import create_client, Client
 
-url = "https://supabase.co"
-key = "sb_publishable_0hgy7utBz2OYJfHVMPBFNQ_jPLnx"
-supabase: Client = create_client(url, key)
 # --- Configuration de l'application web ---
 st.set_page_config(page_title="Gestion Flotte & Recettes", layout="wide")
 
@@ -16,7 +12,7 @@ if "df_clients" not in st.session_state:
 
 if "df_taxis" not in st.session_state:
     st.session_state["df_taxis"] = pd.DataFrame(columns=[
-        "Date", "immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"
+        "Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"
     ])
 
 # --- CHARGEMENT DE LA FLOTTE DEPUIS LE FICHIER CSV ---
@@ -24,7 +20,7 @@ if "df_flotte" not in st.session_state:
     try:
         st.session_state["df_flotte"] = pd.read_csv("flotte_officiel.csv")
     except:
-        columns_flotte = ["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"]
+        columns_flotte = ["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"]
         st.session_state["df_flotte"] = pd.DataFrame(columns=columns_flotte)
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -70,8 +66,8 @@ EXCEL_PARC = "gestion_parc_automobile.xlsx"
 # Initialisation du fichier Excel s'il n'existe pas
 if not os.path.exists(EXCEL_PARC):
     with pd.ExcelWriter(EXCEL_PARC, engine="openpyxl") as writer:
-        pd.DataFrame(columns=["immatriculation", "Marque", "Modèle", "Usage"]).to_excel(writer, sheet_name="Flotte", index=False)
-        pd.DataFrame(columns=["Date", "immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"]).to_excel(writer, sheet_name="Recettes_Taxis", index=False)
+        pd.DataFrame(columns=["Immatriculation", "Marque", "Modèle", "Usage"]).to_excel(writer, sheet_name="Flotte", index=False)
+        pd.DataFrame(columns=["Date", "Immatriculation", "Chauffeur", "Zone / Ligne", "Recette Brute (CFA)", "Carburant/Dépenses (CFA)", "Recette Nette (CFA)"]).to_excel(writer, sheet_name="Recettes_Taxis", index=False)
         pd.DataFrame(columns=["Code Location", "Date Début", "Date Fin", "ID Client", "Nom Complet", "Téléphone", "Adresse", "Prix Total (CFA)"]).to_excel(writer, sheet_name="Locations", index=False)
         pd.DataFrame(columns=["ID Client", "Nom Complet", "Téléphone", "Adresse"]).to_excel(writer, sheet_name="Clients", index=False)
         pd.DataFrame(columns=["ID Chauffeur", "Nom Complet", "Téléphone", "Numéro Permis", "Catégorie", "Expiration"]).to_excel(writer, sheet_name="Chauffeurs", index=False)
@@ -85,7 +81,7 @@ if "df_taxis" not in st.session_state:
         st.session_state["df_taxis"] = pd.read_csv(CSV_FILE_RECETTES)
     except Exception:
         # Solution radicale : Si le fichier n'existe pas, le code le crée instantanément en mémoire
-        structure_recettes = ["Date", "immatriculation", "Recette", "Chauffeur", "Zone", "Statut"]
+        structure_recettes = ["Date", "Immatriculation", "Recette", "Chauffeur", "Zone", "Statut"]
         st.session_state["df_taxis"] = pd.DataFrame(columns=structure_recettes)
 
 if "df_loc" not in st.session_state:
@@ -108,7 +104,7 @@ try:
     st.session_state["df_flotte"] = pd.read_csv("flotte_officiel.csv")
 except Exception:
     if "df_flotte" not in st.session_state:
-        st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+        st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
 
 df_flotte = st.session_state["df_flotte"]
 df_chauffeurs = pd.DataFrame({
@@ -163,11 +159,9 @@ with st.sidebar:
     if role == "DG":
         options_menu.append("🔑 Gestion des Accès")
 
-# --- SÉPARATION NETTE : VITRINE CLIENT vs GESTION INTERNE ---
-st.sidebar.markdown("### 🏬 Menu Principal")
+    # Affichage du menu personnalisé à l'utilisateur
+    menu = st.radio("📌 Navigation Principale", options_menu)
 
-# --- RETOUR AU MENU PRINCIPAL CLASSIQUE ---
-menu = st.sidebar.radio("📌 Navigation Principale", options_menu)
 # ==============================================================================
 # # OPTION 5 : CALCUL DES RECETTES GLOBALES
 # ==============================================================================
@@ -375,15 +369,15 @@ elif "1. Recettes" in menu:
         try:
             df_flotte_lecture = pd.read_csv("flotte_officiel.csv")
             # On récupère uniquement les véhicules enregistrés comme "Taxi Communal"
-            liste_taxis_dispo = df_flotte_lecture[df_flotte_lecture["Type de Service"] == "Taxi Communal"]["immatriculation"].tolist()
+            liste_taxis_dispo = df_flotte_lecture[df_flotte_lecture["Type de Service"] == "Taxi Communal"]["Immatriculation"].tolist()
         except Exception:
             pass
         
         # Si la mémoire de l'application est déjà chargée, on l'utilise en secours
         if "df_flotte" in st.session_state and not st.session_state["df_flotte"].empty:
             df_f = st.session_state["df_flotte"]
-            if "Type de Service" in df_f.columns and "immatriculation" in df_f.columns:
-                liste_taxis_dispo = df_f[df_f["Type de Service"] == "Taxi Communal"]["immatriculation"].tolist()
+            if "Type de Service" in df_f.columns and "Immatriculation" in df_f.columns:
+                liste_taxis_dispo = df_f[df_f["Type de Service"] == "Taxi Communal"]["Immatriculation"].tolist()
     st.subheader("📝 Suivi des Recettes Journalières - Taxis Communaux")
     
     # --- CHARGEMENT ET CRÉATION AUTOMATIQUE DES LIGNES DE TRAJET ---
@@ -426,7 +420,7 @@ elif "1. Recettes" in menu:
                 st.error("⚠️ Veuillez remplir obligatoirement la gare de départ et la gare d'arrivée.")
             
     st.markdown("---")
-    taxis_list = df_flotte[df_flotte["Usage"] == "Taxi Communal"]["immatriculation"].tolist()
+    taxis_list = df_flotte[df_flotte["Usage"] == "Taxi Communal"]["Immatriculation"].tolist()
     
     with st.container():
         col1, col2 = st.columns(2)
@@ -519,7 +513,7 @@ elif "1. Recettes" in menu:
         if bouton_valider:
             nouvelle_recette = {
                 "Date": date_r.strftime("%Y-%m-%d"),
-                "immatriculation": taxi_sel,
+                "Immatriculation": taxi_sel,
                 "Chauffeur": ch_sel,
                 "Zone / Ligne": zone_sel,
                 "Recette Brute (CFA)": recette_b,
@@ -579,12 +573,13 @@ elif "Véhicules de Location" in menu:
     CSV_FILE_CLIENTS = "data_clients.csv"
 
     # Chargement initial des données de location
-    # Chargement initial des données de location depuis Supabase
-    try:
-        response_loc = supabase.table("locations").select("*").execute()
-        df_loc = pd.DataFrame(response_loc.data)
-    except Exception as e:
-        df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "immatriculation", "Prix Journalier", "Nombre de Jours", "Caution", "Montant Total"])
+    if os.path.exists(CSV_FILE_LOC):
+        try:
+            df_loc = pd.read_csv(CSV_FILE_LOC)
+        except Exception:
+            df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "Immatriculation", "Prix Journalier (CFA)", "Nombre de Jours", "Caution (CFA)", "Montant Total (CFA)"])
+    else:
+        df_loc = pd.DataFrame(columns=["Date Enregistrement", "Nom Client", "Immatriculation", "Prix Journalier (CFA)", "Nombre de Jours", "Caution (CFA)", "Montant Total (CFA)"])
 
     # Chargement de la liste des clients pour la sélection
     liste_clients = ["-- Choisir un client existant --"]
@@ -625,16 +620,16 @@ elif "Véhicules de Location" in menu:
                         nb_loc_mois = len(df_client_history)
 
                     # # 2. Calcul du cumul financier (Contrats + Cautions)
-                for col in df_client_history.columns:
-                    if any(mot in col for mot in ["Montant", "Total", "Caution", "Prix"]):
-                        try:
-                            total_encaisse_client += float(pd.to_numeric(df_client_history[col]).sum())
-                        except Exception:
-                            pass
-                # Affichage de la fiche d'information corrigée
-                st.info(f"📊 **Statistiques de {client_selectionne} ce mois-ci :**\n"
-                        f"* Nombre de locations effectuées : **{nb_loc_mois}**\n"
-                        f"* Cumul financier total chez ce client (Contrats + Cautions) : **{total_encaisse_client:,.0f} CFA**".replace(",", " "))
+            for col in df_client_history.columns:
+                if any(mot in col for mot in ["Montant", "Total", "Caution", "Prix"]):
+                    try:
+                        total_encaisse_client += float(pd.to_numeric(df_client_history[col]).sum())
+                    except Exception:
+                        pass
+            # Affichage de la fiche d'information corrigée
+            st.info(f"📊 **Statistiques de {client_selectionne} ce mois-ci :**\n"
+                    f"* Nombre de locations effectuées : **{nb_loc_mois}**\n"
+                    f"* Cumul financier total chez ce client (Contrats + Cautions) : **{total_encaisse_client:,.0f} CFA**".replace(",", " "))
         
         # 2. Formulaire principal des détails de la location
         with st.form(key="form_location", clear_on_submit=True):
@@ -649,7 +644,7 @@ elif "Véhicules de Location" in menu:
                 else:
                     nom_client = st.text_input("Nom complet du client *", value=client_selectionne, disabled=True)
                     
-                immatriculation = st.text_input("immatriculation du véhicule *").upper()
+                immatriculation = st.text_input("Immatriculation du véhicule *").upper()
                 
             with col2:
                 prix_journalier = st.number_input("Prix de location par jour (CFA) *", min_value=0, step=5000, value=25000)
@@ -672,7 +667,7 @@ elif "Véhicules de Location" in menu:
                 nouvelle_location = {
                     "Date Enregistrement": date_actuelle,
                     "Nom Client": nom_client.strip(),
-                    "immatriculation": immatriculation.strip(),
+                    "Immatriculation": immatriculation.strip(),
                     "Prix Journalier (CFA)": prix_journalier,
                     "Nombre de Jours": nb_jours,
                     "Caution (CFA)": caution_versee,
@@ -695,31 +690,8 @@ elif "Véhicules de Location" in menu:
         if not df_loc.empty:
             if "Date Enregistrement" in df_loc.columns:
                 df_loc = df_loc.sort_values(by="Date Enregistrement", ascending=False)
-            
-            # 🔓 SI L'UTILISATEUR CONNECTÉ EST LE DG -> Mode modification / suppression interactif
-            if est_dg:
-                st.info("👋 Bonjour Monsieur le DG. Vous pouvez modifier directement les cases ou supprimer une ligne (en cliquant dessus puis touche Suppr).")
                 
-                # Tableau interactif de modification
-                edited_df_loc = st.data_editor(df_loc, num_rows="dynamic", key="editor_locations_dg", use_container_width=True)
-                
-                # Bouton pour valider les changements globaux
-                if st.button("💾 Enregistrer les modifications de la table"):
-                    try:
-                        # Supprime tout et réinsère pour synchroniser proprement (méthode simple pour commencer)
-                        supabase.table("locations").delete().neq("id", 0).execute()
-                        if not edited_df_loc.empty:
-                            # Conversion en dictionnaire pour Supabase
-                            nouveaux_choix = edited_df_loc.to_dict(orient="records")
-                            supabase.table("locations").insert(nouveaux_choix).execute()
-                        st.success("✅ Modifications appliquées avec succès !")
-                        st.rerun()
-                    except Exception as err:
-                        st.error(f"Erreur de mise à jour : {err}")
-            
-            # 🔒 SI CE N'EST PAS LE DG -> Simple tableau bloqué en lecture seule
-            else:
-                st.dataframe(df_loc, use_container_width=True)
+            st.dataframe(df_loc, use_container_width=True)
             
             # Affichage des cumuls financiers
             t1, t2 = st.columns(2)
@@ -908,26 +880,24 @@ elif "Flotte globale" in menu:
     CSV_FILE_FLOTTE = "flotte_officiel.csv"
 
     # Chargement initial unifié dans la mémoire globale
-    try:
-        response = supabase.table("vehicules").select("*").execute()
-        import pandas as pd
-        df_flotte = pd.DataFrame(response.data)
-        st.session_state["df_flotte"] = df_flotte
-    except Exception as e:
-        st.error(f"Erreur de lecture Supabase : {e}")
-        st.session_state["df_flotte"] = pd.DataFrame()
-    # # Définition des deux onglets (Synchronisés avec le reste de votre code)
-    tab_ajout, tab2 = st.tabs(["Ajouter un Véhicule", "Liste du Parc Automobile"])
+    if not os.path.exists(CSV_FILE_FLOTTE):
+            st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+    else:
+            try:
+                df_intermediaire = pd.read_csv(CSV_FILE_FLOTTE)
+                # Sécurité : Si le fichier sur GitHub existe mais est vide ou mal formaté
+                if df_intermediaire.empty or "Type de Service" not in df_intermediaire.columns:
+                    st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+                else:
+                    st.session_state["df_flotte"] = df_intermediaire
+            except Exception:
+                st.session_state["df_flotte"] = pd.DataFrame(columns=["Date Enregistrement", "Immatriculation", "Marque / Modèle", "Type de Service", "Statut Véhicule"])
+
+    # Définition des deux onglets
+    tab1, tab2 = st.tabs(["📝 Ajouter un Véhicule", "📊 Liste du Parc Automobile"])
     
-    with tab_ajout:
-        # Affichage d'une vraie image HD de voiture urbaine moderne
-        st.image(
-            "https://unsplash.com",
-            caption="Enregistrement officiel des véhicules de la flotte",
-            use_container_width=True
-        )
-        
-        st.subheader("Enregistrer un nouveau véhicule")
+    with tab1:
+        st.subheader("📝 Enregistrer un nouveau véhicule")
         
         with st.form(key="form_flotte", clear_on_submit=True):
             col1, col2 = st.columns(2)
@@ -942,22 +912,25 @@ elif "Flotte globale" in menu:
             
             if submit_vehicule:
                 if immatriculation.strip() == "" or marque_modele.strip() == "":
-                    st.error("⚠️ Veuillez remplir tous les champs obligatoires (immatriculation et Marque/Modèle).")
+                    st.error("⚠️ Veuillez remplir tous les champs obligatoires (Immatriculation et Marque/Modèle).")
                 else:
-                    try:
-                        # 1. Envoi direct à la base de données en ligne Supabase
-                        supabase.table("vehicules").insert({
-                            "immatriculation": immatriculation,
-                            "marque_modele": marque_modele,
-                            "type_service": type_service,
-                            "statut": statut_vehicule
-                        }).execute()
-                        
-                        # 2. Message de succès à l'écran
-                        st.success(f"🚘 Le véhicule {immatriculation} a été enregistré avec succès sur Supabase !")
-                        
-                    except Exception as e:
-                        st.error(f"Erreur lors de l'enregistrement en ligne : {e}")
+                    import datetime
+                    # Le dictionnaire se crée UNIQUEMENT lors du clic sur le bouton
+                    nouveau_vehicule = {
+                        "Date Enregistrement": datetime.datetime.now().strftime("%Y-%m-%d"),
+                        "Immatriculation": immatriculation.strip().upper(),
+                        "Marque / Modèle": marque_modele.strip(),
+                        "Type de Service": type_service,
+                        "Statut Véhicule": statut_vehicule,
+                        "Usage": type_service
+                    }
+                    
+                    # Ajout et sauvegarde stricte dans le fichier permanent
+                    df_flotte = pd.concat([st.session_state['df_flotte'], pd.DataFrame([nouveau_vehicule])], ignore_index=True)
+                    df_flotte.to_csv(CSV_FILE_FLOTTE, index=False)
+                    st.session_state['df_flotte'] = df_flotte
+                    st.success(f"🎉 Véhicule {immatriculation.strip().upper()} enregistré avec succès !")
+                    st.rerun()
 
     with tab2:
         st.subheader("📊 Liste des Véhicules Enregistrés")
@@ -965,21 +938,14 @@ elif "Flotte globale" in menu:
         # Filtre de recherche par immatriculation
         recherche_v = st.text_input("🔍 Filtrer par numéro d'immatriculation :", key="recherche_flotte_ong2")
         
-        # Lecture en direct des véhicules depuis Supabase
-        try:
-            response = supabase.table("vehicules").select("*").execute()
-            import pandas as pd
-            df_affichage = pd.DataFrame(response.data)
-        except Exception as e:
-            st.error(f"Erreur de lecture des données : {e}")
-            df_affichage = pd.DataFrame()
+        df_affichage = st.session_state["df_flotte"].copy()
         
         if not df_affichage.empty:
             # Nettoyage automatique des lignes fantômes vides
-            df_affichage = df_affichage[df_affichage["immatriculation"].notna() & (df_affichage["immatriculation"] != "")]
+            df_affichage = df_affichage[df_affichage["Immatriculation"].notna() & (df_affichage["Immatriculation"] != "")]
             
             if recherche_v:
-                df_affichage = df_affichage[df_affichage["immatriculation"].str.contains(recherche_v, case=False, na=False)]
+                df_affichage = df_affichage[df_affichage["Immatriculation"].str.contains(recherche_v, case=False, na=False)]
             
             # Cette variable vérifie si l'utilisateur en cours est bien connecté en tant que DG
             # --- VÉRIFICATION UNIVERSELLE DE LA CONNEXION DG ---
@@ -1012,53 +978,16 @@ elif "Gestion des Accès" in menu:
         st.title("🔑 Gestion des Accès et Mots de Passe")
         st.subheader("Configuration de la table des utilisateurs")
         
-        import os
-        import pandas as pd
-
-        # 1. Chargement initial ou reconstruction depuis le dictionnaire COMPTES
-        if "df_comptes_securises" not in st.session_state:
-            if os.path.exists("comptes_officiel.csv"):
-                try:
-                    st.session_state["df_comptes_securises"] = pd.read_csv("comptes_officiel.csv")
-                except Exception:
-                    pass
-            
-            if "df_comptes_securises" not in st.session_state or st.session_state["df_comptes_securises"].empty:
-                if 'COMPTES' in globals():
-                    donnees_comptes = []
-                    for identifiant, infos in COMPTES.items():
-                        donnees_comptes.append({
-                            "Identifiant de Connexion": identifiant,
-                            "Nom Affiché": infos["nom"],
-                            "Mot de passe actuel": infos["mp"],
-                            "Rôle Système": infos["role"]
-                        })
-                    st.session_state["df_comptes_securises"] = pd.DataFrame(donnees_comptes)
-
-        # 2. Détection dynamique en temps réel du Directeur Général (DG)
-        est_dg_dynamique = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
-
-        if "df_comptes_securises" in st.session_state and not st.session_state["df_comptes_securises"].empty:
-            if est_dg_dynamique:
-                st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier directement les identifiants, noms, rôles et mots de passe ou supprimer un accès.")
-                
-                # Le tableau devient modifiable uniquement pour le DG
-                df_comptes_edite = st.data_editor(
-                    st.session_state["df_comptes_securises"],
-                    use_container_width=True,
-                    num_rows="dynamic", # Permet au DG de rajouter ou supprimer un compte utilisateur
-                    key="editeur_comptes_dg_final_unique",
-                    hide_index=True
-                )
-                
-                # Bouton de validation permanente
-                if st.button("💾 Enregistrer les modifications des Accès", key="btn_save_comptes_dg_final_unique"):
-                    st.session_state["df_comptes_securises"] = df_comptes_edite
-                    df_comptes_edite.to_csv("comptes_officiel.csv", index=False)
-                    st.success("🎉 Les accès et mots de passe ont été sauvegardés avec succès sur GitHub !")
-                    st.rerun()
-            else:
-                # Lecture seule classique pour le reste de l'équipe
-                st.dataframe(st.session_state["df_comptes_securises"], use_container_width=True, hide_index=True)
+        if 'COMPTES' in globals():
+            donnees_comptes = []
+            for identifiant, infos in COMPTES.items():
+                donnees_comptes.append({
+                    "Identifiant de Connexion": identifiant,
+                    "Nom Affiché": infos["nom"],
+                    "Mot de passe actuel": infos["mp"],
+                    "Rôle Système": infos["role"]
+                })
+            df_comptes = pd.DataFrame(donnees_comptes)
+            st.dataframe(df_comptes, use_container_width=True, hide_index=True)
         else:
-            st.info("La liste des comptes d'accès n'est pas disponible.")
+            st.info("La liste des comptes d'accès n'est pas encore initialisée.")
