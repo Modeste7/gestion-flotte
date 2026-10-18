@@ -809,7 +809,31 @@ elif "Identité des Clients" in menu:
                     df_affichage["Nom Complet"].str.contains(recherche, case=False, na=False) |
                     df_affichage["Téléphone"].str.contains(recherche, case=False, na=False)
                 ]
-            st.dataframe(df_affichage, use_container_width=True)
+            # --- MODE ADMINISTRATEUR DG POUR L'IDENTITÉ DES CLIENTS ---
+            est_dg_dynamique = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
+            
+            if est_dg_dynamique:
+                st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier directement les fiches des clients ou supprimer un profil.")
+                
+                # Le tableau de recherche devient un éditeur interactif uniquement pour le DG
+                df_clients_edite = st.data_editor(
+                    df_affichage,
+                    use_container_width=True,
+                    num_rows="dynamic", # Permet au DG de rajouter ou supprimer un client
+                    key="editeur_clients_identite_dg_unique_final",
+                    hide_index=True
+                )
+                
+                # Bouton de sauvegarde permanente des fiches clients
+                if st.button("💾 Enregistrer les modifications des Clients", key="btn_save_clients_identite_dg_final"):
+                    # On applique les modifications à la table complète
+                    st.session_state["df_clients"] = df_clients_edite
+                    df_clients_edite.to_csv(CSV_FILE_CLIENTS, index=False)
+                    st.success("🎉 Le répertoire de l'identité des clients a été mis à jour avec succès !")
+                    st.rerun()
+            else:
+                # Affichage simple en lecture seule pour le reste du personnel
+                st.dataframe(df_affichage, use_container_width=True, hide_index=True)
             st.metric(label="Total Clients Enregistrés", value=len(df_clients))
         else:
             st.info("Aucun client enregistré pour le moment.")
