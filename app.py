@@ -633,17 +633,26 @@ elif "Véhicules de Location" in menu:
                     df_client_history = pd.DataFrame(columns=["Nom complet du client", "Immatriculation du véhicule", "Montant de la location", "Statut"])
             else:
                 df_client_history = pd.DataFrame(columns=["Nom complet du client", "Immatriculation du véhicule", "Montant de la location", "Statut"])
+            # --- INITIALISATION ET CALCUL SÉCURISÉ DES STATISTIQUES ---
+        nb_loc_mois = 0
+        total_encaisse_client = 0
+        
+        if not df_client_history.empty and "Nom complet du client" in df_client_history.columns:
+            # On filtre l'historique sur le client sélectionné
+            df_filtre_c = df_client_history[df_client_history["Nom complet du client"] == client_selectionne]
+            nb_loc_mois = len(df_filtre_c)
+            
             for col in df_client_history.columns:
                 if any(mot in col for mot in ["Montant", "Total", "Caution", "Prix"]):
                     try:
-                        total_encaisse_client += float(pd.to_numeric(df_client_history[col]).sum())
+                        total_encaisse_client += float(pd.to_numeric(df_filtre_c[col], errors='coerce').sum())
                     except Exception:
                         pass
-            # Affichage de la fiche d'information corrigée
-            st.info(f"📊 **Statistiques de {client_selectionne} ce mois-ci :**\n"
-                    f"* Nombre de locations effectuées : **{nb_loc_mois}**\n"
-                    f"* Cumul financier total chez ce client (Contrats + Cautions) : **{total_encaisse_client:,.0f} CFA**".replace(",", " "))
-        
+
+        # Affichage sécurisé de la fiche d'information
+        st.info(f"📊 **Statistiques de {client_selectionne} ce mois-ci :**\n\n"
+                f"👤 **Nombre de locations effectuées :** {nb_loc_mois}\n\n"
+                f"💰 **Cumul financier total chez ce client (Contrats + Cautions) :** {total_encaisse_client:,.0f} CFA")
         # 2. Formulaire principal des détails de la location
         with st.form(key="form_location", clear_on_submit=True):
             col1, col2 = st.columns(2)
