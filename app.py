@@ -668,7 +668,20 @@ elif "Véhicules de Location" in menu:
                 else:
                     nom_client = st.text_input("Nom complet du client *", value=client_selectionne, disabled=True)
                     
-                immatriculation = st.text_input("Immatriculation du véhicule *").upper()
+                # Récupération automatique des véhicules de location depuis la flotte
+            df_flotte_loc = st.session_state.get("df_flotte", pd.DataFrame())
+            if not df_flotte_loc.empty and "Type de Service" in df_flotte_loc.columns:
+                liste_vehicules_loc = df_flotte_loc[df_flotte_loc["Type de Service"] == "Location"]["Immatriculation"].dropna().tolist()
+            else:
+                liste_vehicules_loc = []
+
+            immatriculation = st.selectbox(
+                "Immatriculation du véhicule *",
+                options=liste_vehicules_loc,
+                index=None,
+                placeholder="Choisir un véhicule de location...",
+                key="select_immat_loc_form"
+            )
                 
             with col2:
                 prix_journalier = st.number_input("Prix de location par jour (CFA) *", min_value=0, step=5000, value=25000)
@@ -682,7 +695,7 @@ elif "Véhicules de Location" in menu:
             submit_button = st.form_submit_button(label="💾 Enregistrer le contrat")
         
         if submit_button:
-            if nom_client.strip() == "" or immatriculation.strip() == "" or client_selectionne == "-- Choisir un client existant --":
+            if nom_client.strip() == "" or not immatriculation or client_selectionne == "-- Choisir un client existant --":
                 st.error("Veuillez sélectionner un client valide et remplir l'immatriculation du véhicule.")
             else:
                 montant_total = prix_journalier * nb_jours
