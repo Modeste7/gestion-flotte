@@ -744,9 +744,11 @@ elif "Véhicules de Location" in menu:
                 
                 # Bouton de sauvegarde des modifications pour le DG
                 if st.button("💾 Enregistrer les modifications des Locations", key="btn_save_locations_global_dg_final"):
-                    # On cherche à retrouver le vrai nom de fichier utilisé au chargement de df_loc
-                    nom_f_contrat = "contrats_location.csv" if "contrats_location.csv" in globals() or os.path.exists("contrats_location.csv") else "sauvegarde_flotte.csv"
-                    df_loc_edite.to_csv(nom_f_contrat, index=False)
+                    st.session_state["df_loc"] = df_loc_edite.copy()
+                    if "CSV_FILE_LOC" in globals():
+                        df_loc_edite.to_csv(CSV_FILE_LOC, index=False)
+                    for f_loc in ["data_locations.csv", "contrats_location.csv"]:
+                        df_loc_edite.to_csv(f_loc, index=False)
                     st.success("🎉 L'historique global des locations a été mis à jour avec succès !")
                     st.rerun()
             else:
@@ -839,10 +841,11 @@ elif "Identité des Clients" in menu:
                 
                 # Bouton de sauvegarde permanente des fiches clients
                 if st.button("💾 Enregistrer les modifications des Clients", key="btn_save_clients_identite_dg_final"):
-                    # On applique les modifications à la table complète
-                    st.session_state["df_clients"] = df_clients_edite
-                    df_clients_edite.to_csv(CSV_FILE_CLIENTS, index=False)
-                    st.success("🎉 Le répertoire de l'identité des clients a été mis à jour avec succès !")
+                    st.session_state["df_clients"] = df_clients_edite.copy()
+                    if "CSV_FILE_CLIENTS" in globals():
+                        df_clients_edite.to_csv(CSV_FILE_CLIENTS, index=False)
+                    df_clients_edite.to_csv("data_clients.csv", index=False)
+                    st.success("🎉 Le répertoire des clients a été mis à jour avec succès !")
                     st.rerun()
             else:
                 # Affichage simple en lecture seule pour le reste du personnel
