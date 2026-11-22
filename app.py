@@ -941,12 +941,10 @@ elif "Identité des Chauffeurs" in menu:
                 
                 # Bouton de sauvegarde des modifications pour le DG
                 if st.button("💾 Enregistrer les modifications des Chauffeurs", key="btn_save_ch_dg_final"):
-                    st.session_state["df_chauffeurs"] = df_ch_edite
-                    # Sauvegarde synchronisée dans vos fichiers de stockage
-                    st.session_state["df_chauffeurs"].to_csv("sauvegarde_chauffeurs.csv", index=False)
-                    if os.path.exists("chauffeurs.csv"):
-                        st.session_state["df_chauffeurs"].to_csv("chauffeurs.csv", index=False)
-                    st.success("🎉 Le répertoire des chauffeurs a été mis à jour avec succès sur GitHub !")
+                    st.session_state["df_chauffeurs"] = df_ch_edite.copy()
+                    df_ch_edite.to_csv(CSV_FILE_CHAUFFEURS, index=False)
+                    df_ch_edite.to_csv("sauvegarde_chauffeurs.csv", index=False)
+                    st.success("🎉 Le répertoire des chauffeurs a été mis à jour avec succès !")
                     st.rerun()
             else:
                 # Affichage simple en lecture seule pour le personnel
