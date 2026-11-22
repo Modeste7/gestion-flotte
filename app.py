@@ -559,6 +559,19 @@ elif "1. Recettes" in menu:
         else:
             # Affichage classique en lecture seule pour le reste du personnel
             st.dataframe(df_affichage, use_container_width=True, hide_index=True)
+            # --- AFFICHAGE DU CUMUL DE RECETTE NETTE DE LA JOURNÉE ---
+        from datetime import date
+        aujourd_hui_str = str(date.today())
+        
+        if "Date" in df_affichage.columns:
+            df_jour = df_affichage[df_affichage["Date"].astype(str).str.startswith(aujourd_hui_str)]
+            col_net = next((c for c in df_affichage.columns if "Net" in c), None)
+            if not col_net:
+                col_net = next((c for c in df_affichage.columns if "Recette" in c or "Montant" in c), None)
+                
+            if col_net:
+                total_net_jour = pd.to_numeric(df_jour[col_net], errors="coerce").sum()
+                st.success(f"💰 **Cumul total des Recettes Nettes du jour ({aujourd_hui_str}) : {total_net_jour:,.0f} CFA**")
     else:
         st.info("Aucune recette enregistrée pour le moment.")
 
