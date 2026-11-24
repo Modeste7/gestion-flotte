@@ -435,6 +435,30 @@ elif "1. Recettes" in menu:
                 placeholder="Tapez le numéro (ex: 970)...",
                 key="select_taxi_recettes_recherche_rapide"
             )
+            # --- AUTO-REMPLISSAGE DEPUIS LA CONFIGURATION FLOTTE ---
+            import glob
+            zone_auto = None
+            chauffeur_auto = None
+            recette_auto = 16000  # Valeur brute par défaut (11 000 net + 5 000 carburant)
+
+            if taxi_sel:
+                dfs_flotte_recherche = [st.session_state.get("df_flotte", pd.DataFrame())]
+                for f_csv in glob.glob("*.csv"):
+                    try:
+                        dfs_flotte_recherche.append(pd.read_csv(f_csv))
+                    except Exception:
+                        pass
+                for df_f_tmp in dfs_flotte_recherche:
+                    if not df_f_tmp.empty and "Immatriculation" in df_f_tmp.columns and "Chauffeur" in df_f_tmp.columns:
+                        match_v = df_f_tmp[df_f_tmp["Immatriculation"].astype(str).str.strip() == str(taxi_sel).strip()]
+                        if not match_v.empty:
+                            info_v = match_v.iloc[-1]
+                            zone_auto = str(info_v.get("Zone Exploitée", "")).strip()
+                            chauffeur_auto = str(info_v.get("Chauffeur", "")).strip()
+                            val_r = pd.to_numeric(info_v.get("Recette Attendue (CFA)", 11000), errors="coerce")
+                            if not pd.isna(val_r) and val_r > 0:
+                                recette_auto = int(val_r) + 5000
+                            break
             
             # --- LECTURE DIRECTE ET SÉCURISÉE DES VRAIS CHAUFFEURS ---
         import pandas as pd
@@ -465,13 +489,14 @@ elif "1. Recettes" in menu:
         if chauffeurs_list:
             chauffeurs_list = [c.strip() for c in chauffeurs_list if c.strip() != ""]
             chauffeurs_list = sorted(list(set(chauffeurs_list)))
-        ch_sel = st.selectbox(
-            "👤 Chauffeur de service :",
-            options=chauffeurs_list,
-            index=None,
-            placeholder="Sélectionnez le chauffeur...",
-            key="select_chauffeur_recettes_permanent"
-        )
+            idx_ch = chauffeurs_list.index(chauffeur_auto) if chauffeur_auto and chauffeur_auto in chauffeurs_list else None
+            ch_sel = st.selectbox(
+                "👤 Chauffeur de service :",
+                options=chauffeurs_list,
+                index=idx_ch,
+                placeholder="Sélectionnez le chauffeur...",
+                key=f"select_chauffeur_recettes_{taxi_sel}"
+            )
             # --- PASSERELLE DE SÉCURITÉ UNIFIÉE POUR LES CHAUFFEURS ---
         if "df_chauffeurs" in st.session_state:
             df_chauffeurs = st.session_state["df_chauffeurs"]
@@ -493,7 +518,9 @@ elif "1. Recettes" in menu:
             tel_chauffeur = "Aucun"
                 
         with col2:
-            zone_sel = st.selectbox("Zone exploitée :", options=st.session_state['liste_gares_zones'])
+            liste_z_rec = st.session_state["lignes"]
+            idx_z = liste_z_rec.index(zone_auto) if zone_auto and zone_auto in liste_z_rec else 0
+            zone_sel = st.selectbox("Zone exploitée :", options=liste_z_rec, index=idx_z, key=f"zone_rec_{taxi_sel}")
             date_r = st.date_input("Date de la recette :", value=datetime.today())
             
     st.markdown("---")
@@ -504,7 +531,8 @@ elif "1. Recettes" in menu:
         liste_montants = list(range(1000, 30500, 500))
         
         with col_m1:
-            recette_b = st.selectbox("Recette brute collectée (CFA) :", options=liste_montants)
+            idx_r = liste_montants.index(recette_auto) if recette_auto in liste_montants else 0
+            recette_b = st.selectbox("Recette brute collectée (CFA) :", options=liste_montants, index=idx_r, key=f"brut_rec_{taxi_sel}")
         with col_m2:
             depenses = st.selectbox("Carburant / Dépenses journalières (CFA) :", options=liste_montants, index=liste_montants.index(5000))
             
