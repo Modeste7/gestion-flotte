@@ -1064,24 +1064,45 @@ elif "Flotte globale" in menu:
         
         st.subheader("Enregistrer un nouveau véhicule")
         
+        # --- RÉCUPÉRATION AUTOMATIQUE DES CHAUFFEURS ET ZONES ---
+        import os
+        df_ch_form = st.session_state.get("df_chauffeurs", pd.DataFrame())
+        fichier_ch = globals().get("CSV_FILE_CHAUFFEURS", "sauvegarde_chauffeurs.csv")
+        if df_ch_form.empty and os.path.exists(fichier_ch):
+            df_ch_form = pd.read_csv(fichier_ch)
+        col_nom_ch = next((c for c in df_ch_form.columns if "Nom" in c), None) if not df_ch_form.empty else None
+        liste_chauffeurs_flotte = ["Non assigné"] + (df_ch_form[col_nom_ch].dropna().unique().tolist() if col_nom_ch else [])
+
+        # Récupération des zones existantes (depuis les zones ou les recettes)
+        liste_zones_flotte = ["Non assignée"]
+        for cle_z in ["df_zones", "df_taxis"]:
+            df_z_temp = st.session_state.get(cle_z, pd.DataFrame())
+            if not df_z_temp.empty:
+                col_z = next((c for c in df_z_temp.columns if "Zone" in c or "Ligne" in c), None)
+                if col_z:
+                    for z in df_z_temp[col_z].dropna().unique().tolist():
+                        if z not in liste_zones_flotte:
+                            liste_zones_flotte.append(z)
+
         with st.form(key="form_flotte", clear_on_submit=True):
             col1, col2 = st.columns(2)
             with col1:
                 immatriculation = st.text_input("Numéro d'immatriculation *")
                 marque_modele = st.text_input("Marque et Modèle (ex: Toyota Corolla) *")
+                chauffeur_assigne = st.selectbox("Chauffeur titulaire :", options=liste_chauffeurs_flotte)
                 recette_attendue = st.number_input("Recette Nette attendue / jour (CFA) :", min_value=0, value=11000, step=500)
             with col2:
-                type_service = st.selectbox("Type d'assignation du véhicule *", ["Taxi Communal", "Location", "En Service"])
-                statut_vehicule = st.selectbox("Statut initial du véhicule *", ["Opérationnel", "En Réparation", "Inactif"])
-            
+                type_service = st.selectbox("Type d'assignation du véhicule *", ["Taxi Communal", "Location", "VTC / Yango"])
+                statut_vehicule = st.selectbox("Statut initial du véhicule *", ["Opérationnel", "En maintenance", "En panne"])
+                zone_exploitee = st.selectbox("Zone exploitée :", options=liste_zones_flotte)
+
             submit_vehicule = st.form_submit_button(label="💾 Enregistrer le véhicule")
-            
+
             if submit_vehicule:
                 if immatriculation.strip() == "" or marque_modele.strip() == "":
-                    st.error("⚠️ Veuillez remplir tous les champs obligatoires (Immatriculation et Marque/Modèle).")
+                    st.error("⚠️ Veuillez remplir tous les champs obligatoires (Immatriculation et Marque).")
                 else:
                     import datetime
-                    # Le dictionnaire se crée UNIQUEMENT lors du clic sur le bouton
                     nouveau_vehicule = {
                         "Date Enregistrement": datetime.datetime.now().strftime("%Y-%m-%d"),
                         "Immatriculation": immatriculation.strip().upper(),
@@ -1089,6 +1110,8 @@ elif "Flotte globale" in menu:
                         "Type de Service": type_service,
                         "Statut Véhicule": statut_vehicule,
                         "Usage": type_service,
+                        "Chauffeur": chauffeur_assigne,
+                        "Zone Exploitée": zone_exploitee,
                         "Recette Attendue (CFA)": recette_attendue
                     }
                     
