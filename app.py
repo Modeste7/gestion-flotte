@@ -582,7 +582,7 @@ elif "1. Recettes" in menu:
     st.subheader("📊 Contrôle Journalier des Versements Taxis")
     
     # Montant journalier normal attendu (modifiable directement à l'écran)
-    montant_attendu = st.number_input("Montant de la recette journalière normale (CFA) :", min_value=0, value=16000, step=1000, key="seuil_recette_jour")
+    montant_attendu = st.number_input("Montant de la recette nette journalière normale (CFA) :", min_value=0, value=11000, step=500, key="seuil_recette_jour")
     
     # 1. Récupération de tous les Taxis de la flotte
     df_flotte_ctrl = st.session_state.get("df_flotte", pd.DataFrame())
@@ -599,7 +599,7 @@ elif "1. Recettes" in menu:
 
     if not df_taxis_ctrl.empty and "Date" in df_taxis_ctrl.columns and "Immatriculation" in df_taxis_ctrl.columns:
         df_jour_ctrl = df_taxis_ctrl[df_taxis_ctrl["Date"].astype(str).str.startswith(aujourd_hui_ctrl)].copy()
-        col_montant_ctrl = next((c for c in df_jour_ctrl.columns if "Net" in c or "Recette" in c or "Montant" in c), None)
+        col_montant_ctrl = "Recette Nette (CFA)" if "Recette Nette (CFA)" in df_jour_ctrl.columns else next((c for c in df_jour_ctrl.columns if "Nette" in c or "Net" in c), None)
         if col_montant_ctrl and not df_jour_ctrl.empty:
             df_jour_ctrl[col_montant_ctrl] = pd.to_numeric(df_jour_ctrl[col_montant_ctrl], errors="coerce").fillna(0)
             versements_par_taxi = df_jour_ctrl.groupby("Immatriculation")[col_montant_ctrl].sum().to_dict()
