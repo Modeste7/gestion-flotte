@@ -1069,6 +1069,7 @@ elif "Flotte globale" in menu:
             with col1:
                 immatriculation = st.text_input("Numéro d'immatriculation *")
                 marque_modele = st.text_input("Marque et Modèle (ex: Toyota Corolla) *")
+                recette_attendue = st.number_input("Recette Nette attendue / jour (CFA) :", min_value=0, value=11000, step=500)
             with col2:
                 type_service = st.selectbox("Type d'assignation du véhicule *", ["Taxi Communal", "Location", "En Service"])
                 statut_vehicule = st.selectbox("Statut initial du véhicule *", ["Opérationnel", "En Réparation", "Inactif"])
@@ -1087,7 +1088,8 @@ elif "Flotte globale" in menu:
                         "Marque / Modèle": marque_modele.strip(),
                         "Type de Service": type_service,
                         "Statut Véhicule": statut_vehicule,
-                        "Usage": type_service
+                        "Usage": type_service,
+                        "Recette Attendue (CFA)": recette_attendue
                     }
                     
                     # Ajout et sauvegarde stricte dans le fichier permanent
