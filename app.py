@@ -518,7 +518,7 @@ elif "1. Recettes" in menu:
             tel_chauffeur = "Aucun"
                 
         with col2:
-            liste_z_rec = st.session_state["lignes"]
+            liste_z_rec = st.session_state.get("lignes", ["Zone 1 : ADJAME -> PLATEAU", "Zone 2 : YOPOUGON -> PLATEAU", "Zone 3 : COCODY -> PLATEAU", "Zone 4 : CITE SIR -> NOUVEAU GOUDRON"])
             idx_z = liste_z_rec.index(zone_auto) if zone_auto and zone_auto in liste_z_rec else 0
             zone_sel = st.selectbox("Zone exploitée :", options=liste_z_rec, index=idx_z, key=f"zone_rec_{taxi_sel}")
             date_r = st.date_input("Date de la recette :", value=datetime.today())
