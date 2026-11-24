@@ -1122,7 +1122,13 @@ elif "Flotte globale" in menu:
                                 liste_zones_flotte.append(z)
 
         # Récupération des zones existantes (depuis les zones ou les recettes)
-        liste_zones_flotte = ["Non assignée"]
+        liste_zones_flotte = [
+            "Non assignée",
+            "Zone 1 : ADJAME -> PLATEAU",
+            "Zone 2 : YOPOUGON -> PLATEAU",
+            "Zone 3 : COCODY -> PLATEAU",
+            "Zone 4 : CITE SIR -> NOUVEAU GOUDRON"
+        ] + [z for z in st.session_state.get("lignes", []) if z not in ["Zone 1 : ADJAME -> PLATEAU", "Zone 2 : YOPOUGON -> PLATEAU", "Zone 3 : COCODY -> PLATEAU", "Zone 4 : CITE SIR -> NOUVEAU GOUDRON"]]
         for cle_z in ["df_zones", "df_taxis"]:
             df_z_temp = st.session_state.get(cle_z, pd.DataFrame())
             if not df_z_temp.empty:
