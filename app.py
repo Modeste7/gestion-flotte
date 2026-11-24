@@ -575,66 +575,66 @@ elif "1. Recettes" in menu:
     else:
         st.info("Aucune recette enregistrée pour le moment.")
 
-        # ==============================================================================
-        # 🔍 COMPARTIMENT DE CONTRÔLE JOURNALIER DES RECETTES TAXIS
-        # ==============================================================================
-        st.markdown("---")
-        st.subheader("📊 Contrôle Journalier des Versements Taxis")
+    # ==============================================================================
+    # 🔍 COMPARTIMENT DE CONTRÔLE JOURNALIER DES RECETTES TAXIS
+    # ==============================================================================
+    st.markdown("---")
+    st.subheader("📊 Contrôle Journalier des Versements Taxis")
+    
+    # Montant journalier normal attendu (modifiable directement à l'écran)
+    montant_attendu = st.number_input("Montant de la recette journalière normale (CFA) :", min_value=0, value=16000, step=1000, key="seuil_recette_jour")
+    
+    # 1. Récupération de tous les Taxis de la flotte
+    df_flotte_ctrl = st.session_state.get("df_flotte", pd.DataFrame())
+    if not df_flotte_ctrl.empty and "Type de Service" in df_flotte_ctrl.columns:
+        taxis_parc = df_flotte_ctrl[df_flotte_ctrl["Type de Service"].astype(str).str.contains("Taxi", case=False, na=False)]["Immatriculation"].dropna().unique().tolist()
+    else:
+        taxis_parc = []
         
-        # Montant journalier normal attendu (modifiable directement à l'écran)
-        montant_attendu = st.number_input("Montant de la recette journalière normale (CFA) :", min_value=0, value=16000, step=1000, key="seuil_recette_jour")
-        
-        # 1. Récupération de tous les Taxis de la flotte
-        df_flotte_ctrl = st.session_state.get("df_flotte", pd.DataFrame())
-        if not df_flotte_ctrl.empty and "Type de Service" in df_flotte_ctrl.columns:
-            taxis_parc = df_flotte_ctrl[df_flotte_ctrl["Type de Service"].astype(str).str.contains("Taxi", case=False, na=False)]["Immatriculation"].dropna().unique().tolist()
-        else:
-            taxis_parc = []
-            
-        # 2. Analyse directe et autonome des versements d'aujourd'hui
-        from datetime import date
-        df_taxis_ctrl = st.session_state.get("df_taxis", pd.DataFrame())
-        aujourd_hui_ctrl = str(date.today())
-        versements_par_taxi = {}
+    # 2. Analyse directe et autonome des versements d'aujourd'hui
+    from datetime import date
+    df_taxis_ctrl = st.session_state.get("df_taxis", pd.DataFrame())
+    aujourd_hui_ctrl = str(date.today())
+    versements_par_taxi = {}
 
-        if not df_taxis_ctrl.empty and "Date" in df_taxis_ctrl.columns and "Immatriculation" in df_taxis_ctrl.columns:
-            df_jour_ctrl = df_taxis_ctrl[df_taxis_ctrl["Date"].astype(str).str.startswith(aujourd_hui_ctrl)].copy()
-            col_montant_ctrl = next((c for c in df_jour_ctrl.columns if "Net" in c or "Recette" in c or "Montant" in c), None)
-            if col_montant_ctrl and not df_jour_ctrl.empty:
-                df_jour_ctrl[col_montant_ctrl] = pd.to_numeric(df_jour_ctrl[col_montant_ctrl], errors="coerce").fillna(0)
-                versements_par_taxi = df_jour_ctrl.groupby("Immatriculation")[col_montant_ctrl].sum().to_dict()
+    if not df_taxis_ctrl.empty and "Date" in df_taxis_ctrl.columns and "Immatriculation" in df_taxis_ctrl.columns:
+        df_jour_ctrl = df_taxis_ctrl[df_taxis_ctrl["Date"].astype(str).str.startswith(aujourd_hui_ctrl)].copy()
+        col_montant_ctrl = next((c for c in df_jour_ctrl.columns if "Net" in c or "Recette" in c or "Montant" in c), None)
+        if col_montant_ctrl and not df_jour_ctrl.empty:
+            df_jour_ctrl[col_montant_ctrl] = pd.to_numeric(df_jour_ctrl[col_montant_ctrl], errors="coerce").fillna(0)
+            versements_par_taxi = df_jour_ctrl.groupby("Immatriculation")[col_montant_ctrl].sum().to_dict()
+        
+    # 3. Classement des véhicules
+    non_payes = []
+    montants_differents = []
+    
+    for immat in taxis_parc:
+        if immat not in versements_par_taxi or versements_par_taxi[immat] == 0:
+            non_payes.append({"Immatriculation": immat, "Statut": "❌ Aucun versement aujourd'hui"})
+        elif versements_par_taxi[immat] != montant_attendu:
+            ecart = versements_par_taxi[immat] - montant_attendu
+            montants_differents.append({
+                "Immatriculation": immat, 
+                "Montant Versé (CFA)": versements_par_taxi[immat],
+                "Écart (CFA)": ecart
+            })
             
-        # 3. Classement des véhicules
-        non_payes = []
-        montants_differents = []
-        
-        for immat in taxis_parc:
-            if immat not in versements_par_taxi or versements_par_taxi[immat] == 0:
-                non_payes.append({"Immatriculation": immat, "Statut": "❌ Aucun versement aujourd'hui"})
-            elif versements_par_taxi[immat] != montant_attendu:
-                ecart = versements_par_taxi[immat] - montant_attendu
-                montants_differents.append({
-                    "Immatriculation": immat, 
-                    "Montant Versé (CFA)": versements_par_taxi[immat],
-                    "Écart (CFA)": ecart
-                })
-                
-        # 4. Affichage côte à côte des deux compartiments
-        col_imp, col_diff = st.columns(2)
-        
-        with col_imp:
-            st.error(f"🚨 **Non-payés du jour : {len(non_payes)} véhicule(s)**")
-            if non_payes:
-                st.dataframe(pd.DataFrame(non_payes), use_container_width=True, hide_index=True)
-            else:
-                st.info("✅ Tous les taxis du parc ont effectué un versement aujourd'hui.")
-                
-        with col_diff:
-            st.warning(f"⚠️ **Montants différents de {montant_attendu:,.0f} CFA : {len(montants_differents)} véhicule(s)**")
-            if montants_differents:
-                st.dataframe(pd.DataFrame(montants_differents), use_container_width=True, hide_index=True)
-            else:
-                st.info("✅ Tous les versements reçus correspondent exactement au montant attendu.")
+    # 4. Affichage côte à côte des deux compartiments
+    col_imp, col_diff = st.columns(2)
+    
+    with col_imp:
+        st.error(f"🚨 **Non-payés du jour : {len(non_payes)} véhicule(s)**")
+        if non_payes:
+            st.dataframe(pd.DataFrame(non_payes), use_container_width=True, hide_index=True)
+        else:
+            st.info("✅ Tous les taxis du parc ont effectué un versement aujourd'hui.")
+            
+    with col_diff:
+        st.warning(f"⚠️ **Montants différents de {montant_attendu:,.0f} CFA : {len(montants_differents)} véhicule(s)**")
+        if montants_differents:
+            st.dataframe(pd.DataFrame(montants_differents), use_container_width=True, hide_index=True)
+        else:
+            st.info("✅ Tous les versements reçus correspondent exactement au montant attendu.")
 
 
 # ==============================================================================
