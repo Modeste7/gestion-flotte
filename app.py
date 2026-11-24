@@ -1064,14 +1064,34 @@ elif "Flotte globale" in menu:
         
         st.subheader("Enregistrer un nouveau véhicule")
         
-        # --- RÉCUPÉRATION AUTOMATIQUE DES CHAUFFEURS ET ZONES ---
-        import os
-        df_ch_form = st.session_state.get("df_chauffeurs", pd.DataFrame())
-        fichier_ch = globals().get("CSV_FILE_CHAUFFEURS", "sauvegarde_chauffeurs.csv")
-        if df_ch_form.empty and os.path.exists(fichier_ch):
-            df_ch_form = pd.read_csv(fichier_ch)
-        col_nom_ch = next((c for c in df_ch_form.columns if "Nom" in c), None) if not df_ch_form.empty else None
-        liste_chauffeurs_flotte = ["Non assigné"] + (df_ch_form[col_nom_ch].dropna().unique().tolist() if col_nom_ch else [])
+         
+        # --- RÉCUPÉRATION UNIVERSELLE DES CHAUFFEURS ET ZONES ---
+        import os, glob
+        liste_chauffeurs_flotte = ["Non assigné"]
+        
+        # 1. Recherche dans la mémoire vive ou dans tous les fichiers CSV du projet
+        dfs_a_verifier = [st.session_state.get("df_chauffeurs", pd.DataFrame())]
+        for f_csv in glob.glob("*.csv"):
+            try:
+                dfs_a_verifier.append(pd.read_csv(f_csv))
+            except Exception:
+                pass
+
+        for df_temp in dfs_a_verifier:
+            if not df_temp.empty and "Code Chauffeur" in df_temp.columns and "Nom Complet" in df_temp.columns:
+                for nom in df_temp["Nom Complet"].dropna().astype(str).str.strip().unique():
+                    if nom and nom not in liste_chauffeurs_flotte:
+                        liste_chauffeurs_flotte.append(nom)
+
+        # 2. Récupération des zones existantes dans tous les fichiers CSV
+        liste_zones_flotte = ["Non assignée"]
+        for df_temp in dfs_a_verifier:
+            if not df_temp.empty:
+                for col_z in df_temp.columns:
+                    if "Zone" in col_z or "Ligne" in col_z:
+                        for z in df_temp[col_z].dropna().astype(str).str.strip().unique():
+                            if z and z != "Non assignée" and z not in liste_zones_flotte:
+                                liste_zones_flotte.append(z)
 
         # Récupération des zones existantes (depuis les zones ou les recettes)
         liste_zones_flotte = ["Non assignée"]
