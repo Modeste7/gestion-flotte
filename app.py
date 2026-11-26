@@ -1431,7 +1431,7 @@ elif "Véhicules de Location" in menu:
                 c_d1.text = "Le loueur\nSignature précédée de la mention « Bon pour accord »"
                 c_d1.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 table_sig.rows[1].cells[0].text = "\n\n\n"
-                table_sig.rows.cells.text = "\n\n\n"
+                table_sig.rows[1].cells[1].text = "\n\n\n"
 
                 buf = io.BytesIO()
                 doc.save(buf)
