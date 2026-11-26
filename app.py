@@ -970,6 +970,18 @@ elif "Véhicules de Location" in menu:
                         total_encaisse_client += float(pd.to_numeric(df_filtre_c[col], errors='coerce').sum())
                     except Exception:
                         pass
+        # --- RECALCUL FIABLE DES STATISTIQUES CLIENT ---
+        nb_loc_mois = 0
+        total_encaisse_client = 0
+        df_loc_calc = pd.read_csv(CSV_FILE_LOC) if ("CSV_FILE_LOC" in globals() and os.path.exists(CSV_FILE_LOC)) else st.session_state.get("df_loc", pd.DataFrame())
+        if not df_loc_calc.empty and "Nom Client" in df_loc_calc.columns and client_selectionne not in ["+ Ajouter un nouveau client non répertorié", "-- Choisir un client existant --"]:
+            df_c_match = df_loc_calc[df_loc_calc["Nom Client"].astype(str).str.strip().str.upper() == str(client_selectionne).strip().upper()].copy()
+            nb_loc_mois = len(df_c_match)
+            col_tot_l = next((c for c in df_c_match.columns if "Total" in c or "Montant" in c), None)
+            col_cau_l = next((c for c in df_c_match.columns if "Caution" in c), None)
+            somme_tot = pd.to_numeric(df_c_match[col_tot_l], errors="coerce").sum() if col_tot_l else 0
+            somme_cau = pd.to_numeric(df_c_match[col_cau_l], errors="coerce").sum() if col_cau_l else 0
+            total_encaisse_client = somme_tot + somme_cau
 
         # Affichage sécurisé de la fiche d'information
         st.info(f"📊 **Statistiques de {client_selectionne} ce mois-ci :**\n\n"
