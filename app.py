@@ -538,6 +538,10 @@ if "Recettes Globales" in menu:
         try:
             with pd.ExcelWriter(buffer_excel, engine="openpyxl") as writer:
                 resume_bilan_df.to_excel(writer, index=False, sheet_name="Bilan Financier")
+                worksheet = writer.sheets["Bilan Financier"]
+                for idx, col in enumerate(resume_bilan_df.columns):
+                    largeur_max = max(resume_bilan_df[col].astype(str).map(len).max(), len(str(col))) + 5
+                    worksheet.column_dimensions[chr(65 + idx)].width = largeur_max
             st.download_button(
                 label=f"📥 Télécharger le Bilan Excel ({periode_bilan} - {annee_bilan})",
                 data=buffer_excel.getvalue(),
