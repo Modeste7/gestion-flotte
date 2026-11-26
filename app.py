@@ -1312,7 +1312,7 @@ elif "Véhicules de Location" in menu:
                 tot_doc = pd.to_numeric(ligne_c.get("Montant Total (CFA)", prix_j_doc * nb_j_doc), errors="coerce") or 0
                 date_doc = str(ligne_c.get("Date Enregistrement", ""))[:10]
 
-                # --- PAGE 1 : FICHE CLIENT ---
+                # --- PAGE 1 : FICHE D'IDENTIFICATION COMPLÈTE ---
                 p_ent = doc.add_paragraph()
                 p_ent.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 r_t = p_ent.add_run(f"{nom_entreprise_app}\n")
@@ -1352,28 +1352,72 @@ elif "Véhicules de Location" in menu:
                     f"NOM DE LA MÈRE : .........................................................................."
                 )
 
+                p_stat = doc.add_paragraph()
+                p_stat.add_run("STATUT CIVIL :   ").bold = True
+                p_stat.add_run("CÉLIBATAIRE [  ]     MARIÉ(E) [  ]     CONCUBINAGE [  ]     VEUF(VE) [  ]\n")
+                p_stat.add_run(
+                    "NOM ET PRÉNOMS CONJOINT(E) : ..........................................................................\n"
+                    "CONTACT : ........................................   NOMBRE D'ENFANTS : ................\n"
+                    "NUMÉRO D'IMMATRICULATION CNPS : .........................................................................."
+                )
+
+                p_urg = doc.add_paragraph()
+                p_urg.add_run("PERSONNES À CONTACTER EN CAS D'URGENCE").bold = True
+                table_urg = doc.add_table(rows=3, cols=3)
+                table_urg.style = "Table Grid"
+                table_urg.rows[0].cells[0].text = "NOMS ET PRÉNOMS"
+                table_urg.rows[0].cells[1].text = "STATUT"
+                table_urg.rows[0].cells[2].text = "CONTACTS"
+
+                doc.add_paragraph(
+                    "\nJe reconnais que toutes ces informations que j'ai données sont correctes et que l'entreprise peut s'en servir pour faire valoir ce que de droit."
+                ).italic = True
+
                 doc.add_page_break()
 
-                # --- PAGE 2 : CONTRAT DE LOCATION ---
+                # --- PAGES 2 & 3 : CONTRAT DÉTAILLÉ (ARTICLES 1.1 À 1.7) ---
                 p_ent2 = doc.add_paragraph()
                 p_ent2.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 r_t2 = p_ent2.add_run(f"{nom_entreprise_app}\n")
                 r_t2.bold = True
                 r_t2.font.size = Pt(16)
-                r_c2 = p_ent2.add_run("\nCONTRAT DE LOCATION DE VÉHICULE")
+                p_ent2.add_run("TRANSPORT - LOCATION DE VÉHICULES - GESTION DE FLOTTE\n\n")
+                r_c2 = p_ent2.add_run("CONTRAT DE LOCATION DE VÉHICULE")
                 r_c2.bold = True
                 r_c2.underline = True
 
                 doc.add_paragraph(
                     f"Entre : {nom_entreprise_app}, appelé ci-après le propriétaire,\n"
                     f"ET : {nom_c_doc}, appelé ci-après le locataire,\n"
-                    f"Véhicule immatriculé : {immat_doc} | Date : {date_doc} | Durée : {int(nb_j_doc)} jour(s)\n"
-                    f"Tarif journalier : {prix_j_doc:,.0f} FCFA | Montant Total : {tot_doc:,.0f} FCFA\n\n"
-                    "Le locataire certifie être en possession d'un permis de conduire valide et s'engage à restituer le véhicule dans son état initial. "
-                    "Tout litige relèvera de la compétence du tribunal de commerce d'Abidjan.\n\n"
-                    f"Fait à Abidjan le {date_doc} en deux exemplaires originaux.\n\n"
+                    f"Il a été convenu ce qui suit :"
                 )
 
+                marque_v = "..........................."
+                for f_fl in ["flotte_officiel.csv", "sauvegarde_flotte.csv"]:
+                    if os.path.exists(f_fl):
+                        try:
+                            df_fl_t = pd.read_csv(f_fl)
+                            m_v = df_fl_t[df_fl_t["Immatriculation"].astype(str).str.strip() == immat_doc]
+                            if not m_v.empty:
+                                marque_v = str(m_v.iloc[-1].get("Marque / Modèle", "..........................."))
+                                break
+                        except Exception:
+                            pass
+
+                for titre_art, texte_art in [
+                    ("1.1 Nature et date d'effet du contrat", f"Le propriétaire met à disposition du locataire, un véhicule de marque {marque_v}, immatriculé {immat_doc} à titre onéreux et à compter du {date_doc} pour une durée de {int(nb_j_doc)} jours renouvelables."),
+                    ("1.2 État du véhicule", "Lors de la remise du véhicule et de sa restitution, un procès-verbal de l'état du véhicule sera établi entre le locataire et le propriétaire. Le véhicule devra être restitué dans le même état que lors de sa remise. Toutes les détériorations constatées sur le PV de sortie seront à la charge du locataire. Le locataire certifie être en possession du permis l'autorisant à conduire le présent véhicule."),
+                    ("1.3 Prix de la location de la voiture", f"Les parties s'entendent sur un prix de location prépayé de {prix_j_doc:,.0f} FCFA/jour calendaire (Total location : {tot_doc:,.0f} FCFA)."),
+                    ("1.4 Durée et restitution de la voiture", f"Le contrat est établi pour une durée de {int(nb_j_doc)} jours reconductibles par accord tacite."),
+                    ("1.5 Autres éléments et accessoires", "Le locataire prendra en charge l'ensemble des charges afférentes à la mise à disposition du véhicule : frais d'entretien, amendes diverses pendant la validité du contrat et frais de carburant."),
+                    ("1.6 Autorisation du client", f"Je soussigné(e) {nom_c_doc}, autorise la prise des photos et l'enregistrement de vidéos de ma personne, lesquels pourront être publiés à des fins de recherche, dans le cas où je ne remplirais pas mes engagements stipulés dans ce contrat."),
+                    ("1.7 Clause en cas de litige", f"Tout litige pouvant naître de l'exécution du présent contrat relèvera de la compétence du tribunal de commerce d'Abidjan.\n\nFait en deux exemplaires originaux remis à chacune des parties,\nÀ Abidjan le {date_doc}          À ......... heures.\n\n")
+                ]:
+                    p_a = doc.add_paragraph()
+                    p_a.add_run(titre_art + "\n").bold = True
+                    p_a.add_run(texte_art)
+
+                # --- SIGNATURES SANS CADRE (GAUCHE ET DROITE) ---
                 table_sig = doc.add_table(rows=2, cols=2)
                 table_sig.autofit = False
                 table_sig.columns[0].width = Inches(3.2)
