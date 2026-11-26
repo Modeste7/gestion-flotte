@@ -401,8 +401,10 @@ if "Recettes Globales" in menu:
                     vehicule_ch = st.selectbox("Véhicule concerné *", options=liste_v_charges)
                     categorie_ch = st.selectbox("Catégorie de charge *", [
                         "Assurance",
-                        "Visite Technique",
-                        "Vignette / Patente",
+                        "Visite Technique / Vignette",
+                        "Patente",
+                        "Stationnement Mairie",
+                        "Stationnement District",
                         "Garage / Réparation Mécanique",
                         "Vidange / Entretien Courant",
                         "Pneumatiques / Pièces",
@@ -1036,6 +1038,160 @@ elif "Véhicules de Location" in menu:
                 st.session_state["df_loc"] = df_loc
                 
                 st.success(f"✅ Le contrat de location avec caution pour **{nom_client}** a été enregistré !")
+                    # ==============================================================================
+                # 📄 GÉNÉRATION AUTOMATIQUE DU CONTRAT & FICHE CLIENT WORD (.DOCX) AKWARY GROUP
+                # ==============================================================================
+                try:
+                    from docx import Document
+                    from docx.shared import Pt
+                    from docx.enum.text import WD_ALIGN_PARAGRAPH
+                    import io
+
+                    doc = Document()
+                    date_jour_contrat = datetime.now().strftime("%d/%m/%Y")
+                    
+                    # --- PAGE 1 : FICHE D'IDENTIFICATION DU LOCATAIRE ---
+                    p_entete = doc.add_paragraph()
+                    p_entete.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    r_titre = p_entete.add_run("AKWARY GROUP SARL\n")
+                    r_titre.bold = True
+                    r_titre.font.size = Pt(16)
+                    p_entete.add_run("RCCM : CI-ABJ-03-2021-B13-06974\nTel : 0709966256 / 0504205701\n\n")
+                    r_sub = p_entete.add_run("FICHE D'IDENTIFICATION ET D'INFORMATION DU LOCATAIRE")
+                    r_sub.bold = True
+                    r_sub.underline = True
+
+                    nom_c_doc = str(nom_client).strip()
+                    tel_c_doc, cni_c_doc, res_c_doc = "", "", ""
+                    df_cl_doc = st.session_state.get("df_clients", pd.DataFrame())
+                    if not df_cl_doc.empty and "Nom Complet" in df_cl_doc.columns:
+                        m_cl = df_cl_doc[df_cl_doc["Nom Complet"].astype(str).str.strip() == nom_c_doc]
+                        if not m_cl.empty:
+                            tel_c_doc = str(m_cl.iloc[-1].get("Téléphone", ""))
+                            cni_c_doc = str(m_cl.iloc[-1].get("N° Pièce / Permis", ""))
+                            res_c_doc = str(m_cl.iloc[-1].get("Adresse / Quartier", ""))
+
+                    doc.add_paragraph(
+                        f"NOM ET PRÉNOMS : {nom_c_doc}\n"
+                        f"DATE ET LIEU DE NAISSANCE : ..........................................................................\n"
+                        f"LIEU DE RÉSIDENCE : {res_c_doc if res_c_doc else '..........................................................................'}\n"
+                        f"CNI / PASSEPORT / PERMIS DE CONDUIRE (Numéro et validité) : {cni_c_doc if cni_c_doc else '........................................'}\n"
+                        f"NATIONALITÉ : ........................................   TÉLÉPHONE : {tel_c_doc if tel_c_doc else '........................................'}\n"
+                        f"NOM DU PÈRE : ..........................................................................\n"
+                        f"NOM DE LA MÈRE : .........................................................................."
+                    )
+
+                    p_stat = doc.add_paragraph()
+                    p_stat.add_run("STATUT CIVIL :   ").bold = True
+                    p_stat.add_run("CÉLIBATAIRE [  ]     MARIÉ(E) [  ]     CONCUBINAGE [  ]     VEUF(VE) [  ]\n")
+                    p_stat.add_run(
+                        "NOM ET PRÉNOMS CONJOINT(E) : ..........................................................................\n"
+                        "CONTACT : ........................................   NOMBRE D'ENFANTS : ................\n"
+                        "NUMÉRO D'IMMATRICULATION CNPS : .........................................................................."
+                    )
+
+                    p_urg = doc.add_paragraph()
+                    p_urg.add_run("PERSONNES À CONTACTER EN CAS D'URGENCE").bold = True
+                    table_urg = doc.add_table(rows=3, cols=3)
+                    table_urg.style = "Table Grid"
+                    table_urg.rows[0].cells[0].text = "NOMS ET PRÉNOMS"
+                    table_urg.rows[0].cells[1].text = "STATUT"
+                    table_urg.rows[0].cells[2].text = "CONTACTS"
+
+                    doc.add_paragraph(
+                        "\nJe reconnais que toutes ces informations que j'ai données sont correctes et que l'entreprise peut s'en servir pour faire valoir ce que de droit."
+                    ).italic = True
+
+                    doc.add_page_break()
+
+                    # --- PAGES 2 & 3 : CONTRAT DE LOCATION DE VÉHICULE ---
+                    p_ent2 = doc.add_paragraph()
+                    p_ent2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    r_t2 = p_ent2.add_run("AKWARY GROUP SARL\n")
+                    r_t2.bold = True
+                    r_t2.font.size = Pt(16)
+                    p_ent2.add_run("BTP - TRANSPORT - ÉLEVAGE - INFORMATIQUE - COMMERCE GÉNÉRAL - HÔTELLERIE\n\n")
+                    r_c_tit = p_ent2.add_run("CONTRAT DE LOCATION DE VÉHICULE")
+                    r_c_tit.bold = True
+                    r_c_tit.underline = True
+
+                    doc.add_paragraph(
+                        f"Entre : AKWARY GROUP SARL, appelé ci-après le propriétaire,\n"
+                        f"ET : {nom_c_doc}, appelé ci-après le locataire,\n"
+                        f"Il a été convenu ce qui suit :"
+                    )
+
+                    marque_v_doc = "..........................."
+                    df_fl_doc = st.session_state.get("df_flotte", pd.DataFrame())
+                    if not df_fl_doc.empty and "Immatriculation" in df_fl_doc.columns:
+                        m_fl = df_fl_doc[df_fl_doc["Immatriculation"].astype(str).str.strip() == str(immatriculation).strip()]
+                        if not m_fl.empty:
+                            marque_v_doc = str(m_fl.iloc[-1].get("Marque / Modèle", "..........................."))
+
+                    p_11 = doc.add_paragraph()
+                    p_11.add_run("1.1 Nature et date d'effet du contrat\n").bold = True
+                    p_11.add_run(
+                        f"Le propriétaire met à disposition du locataire, un véhicule de marque {marque_v_doc}, "
+                        f"Immatriculé {immatriculation} à titre onéreux et à compter du {date_jour_contrat} "
+                        f"Pour une durée de {nb_jours} jours renouvelables."
+                    )
+
+                    p_12 = doc.add_paragraph()
+                    p_12.add_run("1.2 État du véhicule\n").bold = True
+                    p_12.add_run(
+                        "Lors de la remise du véhicule et de sa restitution, un procès-verbal de l'état du véhicule sera établi entre le locataire et le propriétaire. "
+                        "Le véhicule devra être restitué dans le même état que lors de sa remise. Toutes les détériorations sur le véhicule constatées sur le PV de sortie seront à la charge du locataire.\n"
+                        "Le locataire certifie être en possession du permis l'autorisant à conduire le présent véhicule."
+                    )
+
+                    p_13 = doc.add_paragraph()
+                    p_13.add_run("1.3 Prix de la location de la voiture\n").bold = True
+                    p_13.add_run(
+                        f"Les parties s'entendent sur un prix de location prépayé de {prix_journalier:,.0f} FCFA/jour calendaire "
+                        f"(Total location : {montant_total:,.0f} FCFA)."
+                    )
+
+                    p_14 = doc.add_paragraph()
+                    p_14.add_run("1.4 Durée et restitution de la voiture\n").bold = True
+                    p_14.add_run(f"Le contrat est établi pour une durée de {nb_jours} jours reconductibles par accord tacite.")
+
+                    p_15 = doc.add_paragraph()
+                    p_15.add_run("1.5 Autres éléments et accessoires\n").bold = True
+                    p_15.add_run(
+                        "Le locataire prendra en charge l'ensemble des charges afférentes à la mise à disposition du véhicule :\n"
+                        "- Frais d'entretien du véhicule\n"
+                        "- Amendes diverses (infractions du code de la route) pendant la validité du contrat\n"
+                        "- Les frais d'essence"
+                    )
+
+                    p_16 = doc.add_paragraph()
+                    p_16.add_run("1.6 Autorisation du client\n").bold = True
+                    p_16.add_run(
+                        f"Je soussigné(e) {nom_c_doc}, autorise la prise des photos et l'enregistrement de vidéos de ma personne, "
+                        "lesquels pourront être publiés à des fins de recherche, dans le cas où je ne remplirais pas mes engagements stipulés dans ce contrat de location de véhicule."
+                    )
+
+                    p_17 = doc.add_paragraph()
+                    p_17.add_run("1.7 Clause en cas de litige\n").bold = True
+                    p_17.add_run(
+                        "Les parties conviennent expressément que tout litige pouvant naître de l'exécution du présent contrat relèvera de la compétence du tribunal de commerce d'Abidjan.\n"
+                        f"Fait en deux exemplaires originaux remis à chacune des parties,\n"
+                        f"À Abidjan le {date_jour_contrat}          À ......... heures.\n\n"
+                    )
+
+                    table_sig = doc.add_table(rows=2, cols=2)
+                    table_sig.style = "Table Grid"
+                    table_sig.rows[0].cells[0].text = "Le locataire\nSignature précédée de la mention manuscrite bon pour accord"
+                    table_sig.rows[0].cells[1].text = "Le loueur\nSignature précédée de la mention manuscrite bon pour accord\n\nAkwary Group SARL - COCODY-ABATTA"
+                    table_sig.rows[1].cells[0].text = "\n\n\n"
+                    table_sig.rows[1].cells[1].text = "\n\n\n"
+
+                    buffer_doc = io.BytesIO()
+                    doc.save(buffer_doc)
+                    st.session_state["dernier_contrat_docx"] = buffer_doc.getvalue()
+                    st.session_state["nom_fichier_contrat"] = f"Contrat_Akwary_{nom_c_doc.replace(' ', '_')}_{immatriculation}.docx"
+                except Exception as e_doc:
+                    st.warning(f"Erreur génération Word : {e_doc}")
                 st.rerun()
 
     # --- ONGLET 2 : SUIVI ET HISTORIQUE ---
