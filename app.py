@@ -1284,6 +1284,117 @@ elif "Véhicules de Location" in menu:
             with t2:
                 total_cautions = df_loc[[c for c in df_loc.columns if "Caution" in c][0]].sum() if any("Caution" in c for c in df_loc.columns) else 0
                 st.metric(label="Total Cautions en Coffre", value=f"{total_cautions:,.0f} CFA".replace(",", " "))
+
+                # --- RÉIMPRESSION PERMANENTE D'UN CONTRAT WORD (.DOCX) ---
+        st.markdown("---")
+        st.subheader("🖨️ Imprimer / Télécharger un Contrat de Location (Word)")
+        if not df_loc.empty:
+            options_contrats = [
+                f"{idx} | {row.get('Date Enregistrement', '')} - {row.get('Nom Client', '')} ({row.get('Immatriculation', '')})"
+                for idx, row in df_loc.iterrows()
+            ]
+            choix_c_print = st.selectbox("Sélectionner un contrat enregistré :", options=options_contrats[::-1], key="sel_reprint_contrat")
+            idx_choisi = int(choix_c_print.split(" | ")[0])
+            ligne_c = df_loc.loc[idx_choisi]
+
+            if st.button("📄 Préparer le fichier Word de ce contrat", key="btn_prep_word_hist"):
+                from docx import Document
+                from docx.shared import Pt, Inches
+                from docx.enum.text import WD_ALIGN_PARAGRAPH
+                import io, glob
+
+                doc = Document()
+                nom_entreprise_app = st.session_state.get("nom_entreprise", "GESTION FLOTTE & TRANSPORT").upper()
+                nom_c_doc = str(ligne_c.get("Nom Client", "")).strip()
+                immat_doc = str(ligne_c.get("Immatriculation", "")).strip()
+                prix_j_doc = pd.to_numeric(ligne_c.get("Prix Journalier (CFA)", 0), errors="coerce") or 0
+                nb_j_doc = pd.to_numeric(ligne_c.get("Nombre de Jours", 1), errors="coerce") or 1
+                tot_doc = pd.to_numeric(ligne_c.get("Montant Total (CFA)", prix_j_doc * nb_j_doc), errors="coerce") or 0
+                date_doc = str(ligne_c.get("Date Enregistrement", ""))[:10]
+
+                # --- PAGE 1 : FICHE CLIENT ---
+                p_ent = doc.add_paragraph()
+                p_ent.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                r_t = p_ent.add_run(f"{nom_entreprise_app}\n")
+                r_t.bold = True
+                r_t.font.size = Pt(16)
+                p_ent.add_run("Abidjan, Côte d'Ivoire\n\n")
+                r_s = p_ent.add_run("FICHE D'IDENTIFICATION ET D'INFORMATION DU LOCATAIRE")
+                r_s.bold = True
+                r_s.underline = True
+
+                tel_c, cni_c, res_c = "", "", ""
+                for f_csv in glob.glob("*.csv"):
+                    try:
+                        df_tmp = pd.read_csv(f_csv)
+                        col_n = next((c for c in df_tmp.columns if "Nom" in c), None)
+                        if col_n:
+                            m = df_tmp[df_tmp[col_n].astype(str).str.strip().str.upper() == nom_c_doc.upper()]
+                            if not m.empty:
+                                inf = m.iloc[-1]
+                                c_t = next((c for c in df_tmp.columns if "Tel" in c or "Téléphone" in c or "Contact" in c), None)
+                                c_p = next((c for c in df_tmp.columns if "Pièce" in c or "CNI" in c or "Permis" in c), None)
+                                c_a = next((c for c in df_tmp.columns if "Adresse" in c or "Quartier" in c or "Résidence" in c), None)
+                                if c_t and pd.notna(inf.get(c_t)): tel_c = str(inf.get(c_t))
+                                if c_p and pd.notna(inf.get(c_p)): cni_c = str(inf.get(c_p))
+                                if c_a and pd.notna(inf.get(c_a)): res_c = str(inf.get(c_a))
+                                if tel_c or cni_c or res_c: break
+                    except Exception:
+                        pass
+
+                doc.add_paragraph(
+                    f"NOM ET PRÉNOMS : {nom_c_doc}\n"
+                    f"DATE ET LIEU DE NAISSANCE : ..........................................................................\n"
+                    f"LIEU DE RÉSIDENCE : {res_c if res_c else '..........................................................................'}\n"
+                    f"CNI / PASSEPORT / PERMIS DE CONDUIRE : {cni_c if cni_c else '........................................'}\n"
+                    f"NATIONALITÉ : ........................................   TÉLÉPHONE : {tel_c if tel_c else '........................................'}\n"
+                    f"NOM DU PÈRE : ..........................................................................\n"
+                    f"NOM DE LA MÈRE : .........................................................................."
+                )
+
+                doc.add_page_break()
+
+                # --- PAGE 2 : CONTRAT DE LOCATION ---
+                p_ent2 = doc.add_paragraph()
+                p_ent2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                r_t2 = p_ent2.add_run(f"{nom_entreprise_app}\n")
+                r_t2.bold = True
+                r_t2.font.size = Pt(16)
+                r_c2 = p_ent2.add_run("\nCONTRAT DE LOCATION DE VÉHICULE")
+                r_c2.bold = True
+                r_c2.underline = True
+
+                doc.add_paragraph(
+                    f"Entre : {nom_entreprise_app}, appelé ci-après le propriétaire,\n"
+                    f"ET : {nom_c_doc}, appelé ci-après le locataire,\n"
+                    f"Véhicule immatriculé : {immat_doc} | Date : {date_doc} | Durée : {int(nb_j_doc)} jour(s)\n"
+                    f"Tarif journalier : {prix_j_doc:,.0f} FCFA | Montant Total : {tot_doc:,.0f} FCFA\n\n"
+                    "Le locataire certifie être en possession d'un permis de conduire valide et s'engage à restituer le véhicule dans son état initial. "
+                    "Tout litige relèvera de la compétence du tribunal de commerce d'Abidjan.\n\n"
+                    f"Fait à Abidjan le {date_doc} en deux exemplaires originaux.\n\n"
+                )
+
+                table_sig = doc.add_table(rows=2, cols=2)
+                table_sig.autofit = False
+                table_sig.columns[0].width = Inches(3.2)
+                table_sig.columns[1].width = Inches(3.2)
+                table_sig.rows[0].cells[0].text = "Le locataire\nSignature précédée de la mention « Bon pour accord »"
+                c_d1 = table_sig.rows[0].cells[1]
+                c_d1.text = f"Le loueur\nSignature précédée de la mention « Bon pour accord »\n\n{nom_entreprise_app}"
+                c_d1.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                table_sig.rows[1].cells[0].text = "\n\n\n"
+                c_d2 = table_sig.rows[1].cells[1]
+                c_d2.text = "\n« Bon pour accord »\nLe Gérant\n"
+                c_d2.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+                buf = io.BytesIO()
+                doc.save(buf)
+                st.download_button(
+                    label=f"📥 Télécharger le Word de {nom_c_doc}",
+                    data=buf.getvalue(),
+                    file_name=f"Contrat_{nom_c_doc.replace(' ', '_')}_{immat_doc}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
         else:
             st.info("Aucun contrat de location enregistré pour le moment.")
 elif "Identité des Clients" in menu:
