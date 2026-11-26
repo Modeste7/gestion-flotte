@@ -1311,6 +1311,10 @@ elif "Véhicules de Location" in menu:
                 nb_j_doc = pd.to_numeric(ligne_c.get("Nombre de Jours", 1), errors="coerce") or 1
                 tot_doc = pd.to_numeric(ligne_c.get("Montant Total (CFA)", prix_j_doc * nb_j_doc), errors="coerce") or 0
                 date_doc = str(ligne_c.get("Date Enregistrement", ""))[:10]
+                style_normal = doc.styles["Normal"]
+                style_normal.font.name = "Calibri"
+                style_normal.font.size = Pt(12)
+                style_normal.paragraph_format.line_spacing = 1.3
 
                 # --- PAGE 1 : FICHE D'IDENTIFICATION COMPLÈTE ---
                 p_ent = doc.add_paragraph()
@@ -1424,12 +1428,10 @@ elif "Véhicules de Location" in menu:
                 table_sig.columns[1].width = Inches(3.2)
                 table_sig.rows[0].cells[0].text = "Le locataire\nSignature précédée de la mention « Bon pour accord »"
                 c_d1 = table_sig.rows[0].cells[1]
-                c_d1.text = f"Le loueur\nSignature précédée de la mention « Bon pour accord »\n\n{nom_entreprise_app}"
+                c_d1.text = "Le loueur\nSignature précédée de la mention « Bon pour accord »"
                 c_d1.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 table_sig.rows[1].cells[0].text = "\n\n\n"
-                c_d2 = table_sig.rows[1].cells[1]
-                c_d2.text = "\n« Bon pour accord »\nLe Gérant\n"
-                c_d2.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                table_sig.rows.cells.text = "\n\n\n"
 
                 buf = io.BytesIO()
                 doc.save(buf)
