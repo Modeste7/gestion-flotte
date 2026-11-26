@@ -1063,13 +1063,29 @@ elif "Véhicules de Location" in menu:
 
                     nom_c_doc = str(nom_client).strip()
                     tel_c_doc, cni_c_doc, res_c_doc = "", "", ""
-                    df_cl_doc = st.session_state.get("df_clients", pd.DataFrame())
-                    if not df_cl_doc.empty and "Nom Complet" in df_cl_doc.columns:
-                        m_cl = df_cl_doc[df_cl_doc["Nom Complet"].astype(str).str.strip() == nom_c_doc]
-                        if not m_cl.empty:
-                            tel_c_doc = str(m_cl.iloc[-1].get("Téléphone", ""))
-                            cni_c_doc = str(m_cl.iloc[-1].get("N° Pièce / Permis", ""))
-                            res_c_doc = str(m_cl.iloc[-1].get("Adresse / Quartier", ""))
+                    import glob
+                    dfs_cl_recherche = [st.session_state.get("df_clients", pd.DataFrame())]
+                    for f_csv in glob.glob("*.csv"):
+                        try:
+                            dfs_cl_recherche.append(pd.read_csv(f_csv))
+                        except Exception:
+                            pass
+
+                    for df_c_tmp in dfs_cl_recherche:
+                        if not df_c_tmp.empty:
+                            col_nom_c = next((c for c in df_c_tmp.columns if "Nom" in c), None)
+                            if col_nom_c:
+                                m_cl = df_c_tmp[df_c_tmp[col_nom_c].astype(str).str.strip().str.upper() == nom_c_doc.upper()]
+                                if not m_cl.empty:
+                                    info_c = m_cl.iloc[-1]
+                                    col_tel = next((c for c in df_c_tmp.columns if "Tel" in c or "Téléphone" in c or "Contact" in c), None)
+                                    col_cni = next((c for c in df_c_tmp.columns if "Pièce" in c or "CNI" in c or "Permis" in c or "Numéro" in c), None)
+                                    col_adr = next((c for c in df_c_tmp.columns if "Adresse" in c or "Quartier" in c or "Résidence" in c or "Lieu" in c), None)
+                                    if col_tel and pd.notna(info_c.get(col_tel)): tel_c_doc = str(info_c.get(col_tel))
+                                    if col_cni and pd.notna(info_c.get(col_cni)): cni_c_doc = str(info_c.get(col_cni))
+                                    if col_adr and pd.notna(info_c.get(col_adr)): res_c_doc = str(info_c.get(col_adr))
+                                    if tel_c_doc or cni_c_doc or res_c_doc:
+                                        break
 
                     doc.add_paragraph(
                         f"NOM ET PRÉNOMS : {nom_c_doc}\n"
