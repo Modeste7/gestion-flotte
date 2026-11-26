@@ -361,6 +361,96 @@ if "Recettes Globales" in menu:
             )
         except Exception as e:
             st.warning(f"Option d'exportation indisponible pour le moment : {e}")
+
+        # ==============================================================================
+        # 🛠️ COMPARTIMENT DES CHARGES & ENTRETIEN (ASSURANCE, VISITE, VIGNETTE, GARAGE)
+        # ==============================================================================
+        st.markdown("---")
+        st.subheader("🛠️ Gestion des Charges & Entretien (Assurance, Visite, Vignette, Garage)")
+        
+        CSV_CHARGES = "charges_entretien.csv"
+        if os.path.exists(CSV_CHARGES):
+            try:
+                df_charges = pd.read_csv(CSV_CHARGES)
+            except Exception:
+                df_charges = pd.DataFrame(columns=["Date Paiement", "Véhicule", "Catégorie", "Montant (CFA)", "Expiration / Rappel", "Description"])
+        else:
+            df_charges = pd.DataFrame(columns=["Date Paiement", "Véhicule", "Catégorie", "Montant (CFA)", "Expiration / Rappel", "Description"])
+            
+        st.session_state["df_charges"] = df_charges
+
+        # Récupération de la liste des véhicules de la flotte
+        liste_v_charges = ["Frais Généraux Entreprise"]
+        for f_flotte in ["flotte_officiel.csv", "sauvegarde_flotte.csv"]:
+            if os.path.exists(f_flotte):
+                try:
+                    df_f_ch = pd.read_csv(f_flotte)
+                    if "Immatriculation" in df_f_ch.columns:
+                        for im in df_f_ch["Immatriculation"].dropna().astype(str).str.strip().unique():
+                            if im and im not in liste_v_charges:
+                                liste_v_charges.append(im)
+                except Exception:
+                    pass
+
+        tab_saisie_ch, tab_hist_ch = st.tabs(["➕ Enregistrer une Dépense / Charge", "📋 Historique & Suivi des Charges"])
+
+        with tab_saisie_ch:
+            with st.form("form_ajout_charge", clear_on_submit=True):
+                c_ch1, c_ch2 = st.columns(2)
+                with c_ch1:
+                    vehicule_ch = st.selectbox("Véhicule concerné *", options=liste_v_charges)
+                    categorie_ch = st.selectbox("Catégorie de charge *", [
+                        "Assurance",
+                        "Visite Technique",
+                        "Vignette / Patente",
+                        "Garage / Réparation Mécanique",
+                        "Vidange / Entretien Courant",
+                        "Pneumatiques / Pièces",
+                        "Autre Dépense"
+                    ])
+                    montant_ch = st.number_input("Montant payé (CFA) *", min_value=0, value=0, step=1000)
+                with c_ch2:
+                    from datetime import date, timedelta
+                    date_paie_ch = st.date_input("Date de paiement *", value=date.today())
+                    date_exp_ch = st.date_input("Date d'expiration / Prochain rappel (Optionnel)", value=date.today() + timedelta(days=365))
+                    desc_ch = st.text_input("Détails / Facture / Garage (ex: Renouvellement 1 an, Plaquettes frein)")
+
+                if st.form_submit_button("💾 Enregistrer la Charge"):
+                    if montant_ch <= 0:
+                        st.error("⚠️ Veuillez saisir un montant supérieur à 0 CFA.")
+                    else:
+                        nouvelle_charge = pd.DataFrame([{
+                            "Date Paiement": str(date_paie_ch),
+                            "Véhicule": vehicule_ch,
+                            "Catégorie": categorie_ch,
+                            "Montant (CFA)": montant_ch,
+                            "Expiration / Rappel": str(date_exp_ch),
+                            "Description": desc_ch.strip()
+                        }])
+                        df_charges = pd.concat([df_charges, nouvelle_charge], ignore_index=True)
+                        df_charges.to_csv(CSV_CHARGES, index=False)
+                        st.session_state["df_charges"] = df_charges
+                        st.success(f"✅ Charge de {montant_ch:,.0f} CFA ({categorie_ch}) enregistrée !")
+                        st.rerun()
+
+        with tab_hist_ch:
+            if not df_charges.empty:
+                total_charges_global = pd.to_numeric(df_charges["Montant (CFA)"], errors="coerce").sum()
+                st.error(f"📉 **Total Cumulé des Charges & Entretiens : {total_charges_global:,.0f} CFA**")
+
+                est_dg_ch = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
+                if est_dg_ch:
+                    st.info("💡 Mode Administrateur DG actif : Vous pouvez modifier ou supprimer une charge.")
+                    df_ch_edite = st.data_editor(df_charges, use_container_width=True, num_rows="dynamic", key="editeur_charges_dg", hide_index=True)
+                    if st.button("💾 Enregistrer les modifications des Charges", key="btn_save_charges_dg"):
+                        df_ch_edite.to_csv(CSV_CHARGES, index=False)
+                        st.session_state["df_charges"] = df_ch_edite
+                        st.success("🎉 Historique des charges mis à jour !")
+                        st.rerun()
+                else:
+                    st.dataframe(df_charges, use_container_width=True, hide_index=True)
+            else:
+                st.info("Aucune charge enregistrée pour le moment.")
 elif "1. Recettes" in menu:
     st.title("🚕 Gestion des Taxis Communaux")
     # --- SÉCURISATION ET CHARGEMENT DIRECT DES TAXIS POUR LA LISTE DÉROULANTE ---
