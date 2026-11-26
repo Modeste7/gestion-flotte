@@ -1193,6 +1193,13 @@ elif "Véhicules de Location" in menu:
                 except Exception as e_doc:
                     st.warning(f"Erreur génération Word : {e_doc}")
                 st.rerun()
+    if "dernier_contrat_docx" in st.session_state:
+            st.download_button(
+                label=f"📄 Télécharger le Contrat & Fiche Client Word ({st.session_state['nom_fichier_contrat']})",
+                data=st.session_state["dernier_contrat_docx"],
+                file_name=st.session_state["nom_fichier_contrat"],
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
 
     # --- ONGLET 2 : SUIVI ET HISTORIQUE ---
     with tab2:
