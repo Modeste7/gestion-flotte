@@ -1196,9 +1196,24 @@ elif "Véhicules de Location" in menu:
                         f"À Abidjan le {date_jour_contrat}          À ......... heures.\n\n"
                     )
 
-                    # --- SIGNATURES SANS ENCADREMENT ---
+                    # --- SIGNATURES SANS ENCADREMENT (GAUCHE ET DROITE) ---
+                    from docx.shared import Inches
                     table_sig = doc.add_table(rows=2, cols=2)
-                    table_sig.rows[0].cells[0].text = "Le locataire\nSignature précédée de la mention manuscrite « Bon pour accord »"
+                    table_sig.autofit = False
+                    table_sig.columns.width = Inches(3.2)
+                    table_sig.columns.width = Inches(3.2)
+
+                    table_sig.rows.cells.text = "Le locataire\nSignature précédée de la mention manuscrite « Bon pour accord »"
+                    
+                    cell_d1 = table_sig.rows.cells
+                    cell_d1.text = f"Le loueur\nSignature précédée de la mention manuscrite « Bon pour accord »\n\n{nom_entreprise_app}"
+                    cell_d1.paragraphs.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+                    table_sig.rows.cells.text = "\n\n\n"
+                    
+                    cell_d2 = table_sig.rows.cells
+                    cell_d2.text = "\n« Bon pour accord »\nLe Gérant\n"
+                    cell_d2.paragraphs.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
                     buffer_doc = io.BytesIO()
                     doc.save(buffer_doc)
