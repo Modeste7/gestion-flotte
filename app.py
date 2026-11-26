@@ -1049,14 +1049,15 @@ elif "Véhicules de Location" in menu:
 
                     doc = Document()
                     date_jour_contrat = datetime.now().strftime("%d/%m/%Y")
+                    nom_entreprise_app = st.session_state.get("nom_entreprise", "GESTION FLOTTE & TRANSPORT").upper()
                     
                     # --- PAGE 1 : FICHE D'IDENTIFICATION DU LOCATAIRE ---
                     p_entete = doc.add_paragraph()
                     p_entete.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    r_titre = p_entete.add_run("AKWARY GROUP SARL\n")
+                    r_titre = p_entete.add_run(f"{nom_entreprise_app}\n")
                     r_titre.bold = True
                     r_titre.font.size = Pt(16)
-                    p_entete.add_run("RCCM : CI-ABJ-03-2021-B13-06974\nTel : 0709966256 / 0504205701\n\n")
+                    p_entete.add_run("Abidjan, Côte d'Ivoire\n\n")
                     r_sub = p_entete.add_run("FICHE D'IDENTIFICATION ET D'INFORMATION DU LOCATAIRE")
                     r_sub.bold = True
                     r_sub.underline = True
@@ -1123,16 +1124,16 @@ elif "Véhicules de Location" in menu:
                     # --- PAGES 2 & 3 : CONTRAT DE LOCATION DE VÉHICULE ---
                     p_ent2 = doc.add_paragraph()
                     p_ent2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    r_t2 = p_ent2.add_run("AKWARY GROUP SARL\n")
+                    r_t2 = p_ent2.add_run(f"{nom_entreprise_app}\n")
                     r_t2.bold = True
                     r_t2.font.size = Pt(16)
-                    p_ent2.add_run("BTP - TRANSPORT - ÉLEVAGE - INFORMATIQUE - COMMERCE GÉNÉRAL - HÔTELLERIE\n\n")
+                    p_ent2.add_run("TRANSPORT - LOCATION DE VÉHICULES - GESTION DE FLOTTE\n\n")
                     r_c_tit = p_ent2.add_run("CONTRAT DE LOCATION DE VÉHICULE")
                     r_c_tit.bold = True
                     r_c_tit.underline = True
 
                     doc.add_paragraph(
-                        f"Entre : AKWARY GROUP SARL, appelé ci-après le propriétaire,\n"
+                        f"Entre : {nom_entreprise_app}, appelé ci-après le propriétaire,\n"
                         f"ET : {nom_c_doc}, appelé ci-après le locataire,\n"
                         f"Il a été convenu ce qui suit :"
                     )
@@ -1148,8 +1149,8 @@ elif "Véhicules de Location" in menu:
                     p_11.add_run("1.1 Nature et date d'effet du contrat\n").bold = True
                     p_11.add_run(
                         f"Le propriétaire met à disposition du locataire, un véhicule de marque {marque_v_doc}, "
-                        f"Immatriculé {immatriculation} à titre onéreux et à compter du {date_jour_contrat} "
-                        f"Pour une durée de {nb_jours} jours renouvelables."
+                        f"immatriculé {immatriculation} à titre onéreux et à compter du {date_jour_contrat} "
+                        f"pour une durée de {nb_jours} jours renouvelables."
                     )
 
                     p_12 = doc.add_paragraph()
@@ -1190,17 +1191,14 @@ elif "Véhicules de Location" in menu:
                     p_17 = doc.add_paragraph()
                     p_17.add_run("1.7 Clause en cas de litige\n").bold = True
                     p_17.add_run(
-                        "Les parties conviennent expressément que tout litige pouvant naître de l'exécution du présent contrat relèvera de la compétence du tribunal de commerce d'Abidjan.\n"
+                        "Les parties conviennent expressément que tout litige pouvant naître de l'exécution du présent contrat relèvera de la compétence du tribunal de commerce d'Abidjan.\n\n"
                         f"Fait en deux exemplaires originaux remis à chacune des parties,\n"
                         f"À Abidjan le {date_jour_contrat}          À ......... heures.\n\n"
                     )
 
+                    # --- SIGNATURES SANS ENCADREMENT ---
                     table_sig = doc.add_table(rows=2, cols=2)
-                    table_sig.style = "Table Grid"
-                    table_sig.rows[0].cells[0].text = "Le locataire\nSignature précédée de la mention manuscrite bon pour accord"
-                    table_sig.rows[0].cells[1].text = "Le loueur\nSignature précédée de la mention manuscrite bon pour accord\n\nAkwary Group SARL - COCODY-ABATTA"
-                    table_sig.rows[1].cells[0].text = "\n\n\n"
-                    table_sig.rows[1].cells[1].text = "\n\n\n"
+                    table_sig.rows[0].cells[0].text = "Le locataire\nSignature précédée de la mention manuscrite « Bon pour accord »"
 
                     buffer_doc = io.BytesIO()
                     doc.save(buffer_doc)
