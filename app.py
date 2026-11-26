@@ -532,12 +532,26 @@ if "Recettes Globales" in menu:
             {"Rubrique": "Charges & Entretiens (Assurance, Visite, Garage...)", "Période": f"{periode_bilan} {annee_bilan}", "Montant (CFA)": -total_charges_p},
             {"Rubrique": "BÉNÉFICE NET RÉEL", "Période": f"{periode_bilan} {annee_bilan}", "Montant (CFA)": benefice_net_bilan},
         ])
-        st.download_button(
-            label=f"📥 Télécharger le Bilan ({periode_bilan} - {annee_bilan})",
-            data=resume_bilan_df.to_csv(index=False).encode("utf-8"),
-            file_name=f"Bilan_{annee_bilan}_{periode_bilan[:12].replace(' ', '_')}.csv",
-            mime="text/csv"
-        )
+        import io
+        # Génération d'un vrai fichier Excel (.xlsx) propre avec colonnes alignées et accents parfaits
+        buffer_excel = io.BytesIO()
+        try:
+            with pd.ExcelWriter(buffer_excel, engine="openpyxl") as writer:
+                resume_bilan_df.to_excel(writer, index=False, sheet_name="Bilan Financier")
+            st.download_button(
+                label=f"📥 Télécharger le Bilan Excel ({periode_bilan} - {annee_bilan})",
+                data=buffer_excel.getvalue(),
+                file_name=f"Bilan_{annee_bilan}_{periode_bilan[:12].replace(' ', '_')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        except Exception:
+            # Secours en CSV compatible Excel français (point-virgule + utf-8-sig)
+            st.download_button(
+                label=f"📥 Télécharger le Bilan ({periode_bilan} - {annee_bilan})",
+                data=resume_bilan_df.to_csv(index=False, sep=";").encode("utf-8-sig"),
+                file_name=f"Bilan_{annee_bilan}_{periode_bilan[:12].replace(' ', '_')}.csv",
+                mime="text/csv"
+            )
 
         # --- CLÔTURE ANNUELLE DE L'EXERCICE (RÉSERVÉE AU DG) ---
         est_dg_cloture = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
