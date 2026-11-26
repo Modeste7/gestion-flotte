@@ -451,6 +451,114 @@ if "Recettes Globales" in menu:
                     st.dataframe(df_charges, use_container_width=True, hide_index=True)
             else:
                 st.info("Aucune charge enregistrée pour le moment.")
+
+        # ==============================================================================
+        # 📊 BILANS PÉRIODIQUES (TRIMESTRIEL, SEMESTRIEL 6 MOIS, ANNUEL) & CLÔTURE
+        # ==============================================================================
+        st.markdown("---")
+        st.subheader("📊 Bilans Financiers (Trimestriel, Semestriel 6 Mois, Annuel) & Clôture")
+
+        col_b1, col_b2 = st.columns(2)
+        with col_b1:
+            annee_bilan = st.selectbox("Année de l'exercice :", options=[2025, 2026, 2027, 2028], index=1, key="sel_annee_bilan")
+        with col_b2:
+            periode_bilan = st.selectbox("Période du Bilan :", [
+                "Année Complète (12 Mois)",
+                "1er Semestre (Janvier - Juin / 6 Mois)",
+                "2ème Semestre (Juillet - Décembre / 6 Mois)",
+                "1er Trimestre (Janvier - Mars)",
+                "2ème Trimestre (Avril - Juin)",
+                "3ème Trimestre (Juillet - Septembre)",
+                "4ème Trimestre (Octobre - Décembre)"
+            ], key="sel_periode_bilan")
+
+        # Définition des mois inclus selon le choix
+        if "1er Trimestre" in periode_bilan:
+            mois_valides = [1, 2, 3]
+        elif "2ème Trimestre" in periode_bilan:
+            mois_valides = [4, 5, 6]
+        elif "3ème Trimestre" in periode_bilan:
+            mois_valides = [7, 8, 9]
+        elif "4ème Trimestre" in periode_bilan:
+            mois_valides = [10, 11, 12]
+        elif "1er Semestre" in periode_bilan:
+            mois_valides = [1, 2, 3, 4, 5, 6]
+        elif "2ème Semestre" in periode_bilan:
+            mois_valides = [7, 8, 9, 10, 11, 12]
+        else:
+            mois_valides = list(range(1, 13))
+
+        # Fonction de filtrage par année et mois
+        def filtrer_periode(df_source, col_date):
+            if df_source.empty or col_date not in df_source.columns:
+                return pd.DataFrame()
+            df_tmp = df_source.copy()
+            dt_series = pd.to_datetime(df_tmp[col_date], errors="coerce")
+            return df_tmp[(dt_series.dt.year == annee_bilan) & (dt_series.dt.month.isin(mois_valides))]
+
+        # 1. Calcul des Recettes Taxis sur la période
+        df_t_bilan = filtrer_periode(st.session_state.get("df_taxis", pd.DataFrame()), "Date")
+        col_net_t = next((c for c in df_t_bilan.columns if "Nette" in c or "Net" in c), None) if not df_t_bilan.empty else None
+        total_rec_taxis = pd.to_numeric(df_t_bilan[col_net_t], errors="coerce").sum() if col_net_t else 0
+
+        # 2. Calcul des Recettes Locations sur la période
+        df_l_bilan = filtrer_periode(st.session_state.get("df_loc", pd.DataFrame()), "Date Enregistrement")
+        if df_l_bilan.empty and not st.session_state.get("df_loc", pd.DataFrame()).empty:
+            col_d_loc = next((c for c in st.session_state["df_loc"].columns if "Date" in c), None)
+            if col_d_loc:
+                df_l_bilan = filtrer_periode(st.session_state["df_loc"], col_d_loc)
+        col_m_loc = next((c for c in df_l_bilan.columns if "Montant" in c or "Total" in c or "Prix" in c), None) if not df_l_bilan.empty else None
+        total_rec_loc = pd.to_numeric(df_l_bilan[col_m_loc], errors="coerce").sum() if col_m_loc else 0
+
+        # 3. Calcul des Charges & Entretiens sur la période
+        df_c_bilan = filtrer_periode(df_charges, "Date Paiement")
+        total_charges_p = pd.to_numeric(df_c_bilan["Montant (CFA)"], errors="coerce").sum() if not df_c_bilan.empty else 0
+
+        # Synthèse financière
+        total_entrees = total_rec_taxis + total_rec_loc
+        benefice_net_bilan = total_entrees - total_charges_p
+
+        m_b1, m_b2, m_b3, m_b4 = st.columns(4)
+        m_b1.metric("🚕 Recettes Nettes Taxis", f"{total_rec_taxis:,.0f} CFA")
+        m_b2.metric("🚗 Recettes Locations", f"{total_rec_loc:,.0f} CFA")
+        m_b3.metric("🛠️ Charges & Entretien", f"- {total_charges_p:,.0f} CFA")
+        m_b4.metric("💰 Bénéfice Net Réel", f"{benefice_net_bilan:,.0f} CFA")
+
+        # Exportation du Bilan en CSV
+        resume_bilan_df = pd.DataFrame([
+            {"Rubrique": "Recettes Nettes Taxis", "Période": f"{periode_bilan} {annee_bilan}", "Montant (CFA)": total_rec_taxis},
+            {"Rubrique": "Recettes Locations", "Période": f"{periode_bilan} {annee_bilan}", "Montant (CFA)": total_rec_loc},
+            {"Rubrique": "Total Entrées", "Période": f"{periode_bilan} {annee_bilan}", "Montant (CFA)": total_entrees},
+            {"Rubrique": "Charges & Entretiens (Assurance, Visite, Garage...)", "Période": f"{periode_bilan} {annee_bilan}", "Montant (CFA)": -total_charges_p},
+            {"Rubrique": "BÉNÉFICE NET RÉEL", "Période": f"{periode_bilan} {annee_bilan}", "Montant (CFA)": benefice_net_bilan},
+        ])
+        st.download_button(
+            label=f"📥 Télécharger le Bilan ({periode_bilan} - {annee_bilan})",
+            data=resume_bilan_df.to_csv(index=False).encode("utf-8"),
+            file_name=f"Bilan_{annee_bilan}_{periode_bilan[:12].replace(' ', '_')}.csv",
+            mime="text/csv"
+        )
+
+        # --- CLÔTURE ANNUELLE DE L'EXERCICE (RÉSERVÉE AU DG) ---
+        est_dg_cloture = st.session_state.get("role") == "DG" or st.session_state.get("username") == "dg" or "dg" in str(st.session_state.to_dict()).lower()
+        if est_dg_cloture and "Année Complète" in periode_bilan:
+            with st.expander(f"🔒 Clôture Officielle de l'Exercice {annee_bilan} (Action Administrateur DG)"):
+                st.warning(f"⚠️ La clôture va archiver définitivement toutes les opérations de **{annee_bilan}** dans un dossier sécurisé (`archives_{annee_bilan}/`) et remettre les compteurs d'opérations courantes à zéro pour démarrer le nouvel exercice.")
+                confirmer_cloture = st.checkbox(f"Je confirme vouloir archiver et clôturer l'exercice {annee_bilan}", key="chk_cloture_dg")
+                if st.button(f"🗄️ Archiver et Clôturer l'exercice {annee_bilan}", disabled=not confirmer_cloture, key="btn_cloture_dg"):
+                    import shutil
+                    dossier_arch = f"archives_exercice_{annee_bilan}"
+                    os.makedirs(dossier_arch, exist_ok=True)
+                    for f_csv in ["data_taxis.csv", "data_locations.csv", "charges_entretien.csv", "flotte_officiel.csv"]:
+                        if os.path.exists(f_csv):
+                            shutil.copy(f_csv, os.path.join(dossier_arch, f_csv))
+                    # Réinitialisation des opérations courantes pour la nouvelle année (la flotte, clients et chauffeurs sont conservés)
+                    for f_reset in ["data_taxis.csv", "data_locations.csv", "charges_entretien.csv"]:
+                        if os.path.exists(f_reset):
+                            df_vide = pd.read_csv(f_reset).iloc[0:0]
+                            df_vide.to_csv(f_reset, index=False)
+                    st.success(f"🎉 Exercice {annee_bilan} archivé dans '{dossier_arch}/' et compteurs réinitialisés avec succès !")
+                    st.rerun()
 elif "1. Recettes" in menu:
     st.title("🚕 Gestion des Taxis Communaux")
     # --- SÉCURISATION ET CHARGEMENT DIRECT DES TAXIS POUR LA LISTE DÉROULANTE ---
